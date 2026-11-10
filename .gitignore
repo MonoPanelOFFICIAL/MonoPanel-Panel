@@ -1,0 +1,26 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.cache/
+.vite/
+.tmp/
+temp/
+
+# Runtime Data
+bin/*
+!bin/.gitkeep
+bin/playit
+data/*
+!data/.gitkeep
+data/ssh_host_*
+data/nodes/*/playit/playit.sock
+data/nodes/*/playit/playit.log
+data/servers/*/playit/playit.sock
+data/servers/*/playit/playit.log
+node_modules/
+.env

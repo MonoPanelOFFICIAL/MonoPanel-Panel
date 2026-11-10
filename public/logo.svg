@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="logoMono" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa66d" />
+      <stop offset="45%" stop-color="#ff6a1a" />
+      <stop offset="100%" stop-color="#c53f07" />
+    </linearGradient>
+  </defs>
+
+  <!-- Emblem -->
+  <g transform="translate(10, 10)">
+    <rect width="60" height="60" rx="14" fill="#131316" stroke="url(#logoMono)" stroke-width="1.5" stroke-opacity="0.4" />
+    <g stroke="url(#logoMono)" stroke-width="3" stroke-linecap="round">
+      <line x1="30" y1="30" x2="30" y2="13" />
+      <line x1="30" y1="30" x2="17" y2="39" />
+      <line x1="30" y1="30" x2="43" y2="39" />
+    </g>
+    <circle cx="30" cy="13" r="5.5" fill="url(#logoMono)" />
+    <circle cx="17" cy="39" r="5.5" fill="url(#logoMono)" />
+    <circle cx="43" cy="39" r="5.5" fill="url(#logoMono)" />
+    <circle cx="30" cy="30" r="7" fill="#131316" stroke="url(#logoMono)" stroke-width="3" />
+  </g>
+
+  <!-- Text -->
+  <text x="84" y="44" font-family="Archivo, system-ui, -apple-system, sans-serif" font-weight="800" font-size="28" letter-spacing="-0.5" fill="#ffffff">
+    Mono<tspan fill="url(#logoMono)">Node</tspan>
+  </text>
+  <text x="85" y="60" font-family="Archivo, system-ui, -apple-system, sans-serif" font-weight="600" font-size="10" letter-spacing="2" fill="#9a9aa3">
+    BOT &amp; VPS HOSTING
+  </text>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none">
+  <defs>
+    <linearGradient id="compactMono" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa66d" />
+      <stop offset="45%" stop-color="#ff6a1a" />
+      <stop offset="100%" stop-color="#c53f07" />
+    </linearGradient>
+  </defs>
+  <rect width="60" height="60" rx="14" fill="#131316" stroke="url(#compactMono)" stroke-width="1.5" stroke-opacity="0.4" />
+  <g stroke="url(#compactMono)" stroke-width="2.6" stroke-linecap="round">
+    <line x1="30" y1="30" x2="30" y2="13" />
+    <line x1="30" y1="30" x2="17" y2="39" />
+    <line x1="30" y1="30" x2="43" y2="39" />
+  </g>
+  <circle cx="30" cy="13" r="5" fill="url(#compactMono)" />
+  <circle cx="17" cy="39" r="5" fill="url(#compactMono)" />
+  <circle cx="43" cy="39" r="5" fill="url(#compactMono)" />
+  <circle cx="30" cy="30" r="6.5" fill="#131316" stroke="url(#compactMono)" stroke-width="2.6" />
+</svg>
