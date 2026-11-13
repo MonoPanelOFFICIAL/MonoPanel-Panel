@@ -25,6 +25,8 @@ import { Status } from './pages/public/Status';
 import { Docs } from './pages/public/Docs';
 import { LegalPage } from './pages/public/LegalPage';
 import { NotFound } from './pages/public/NotFound';
+import { KindHosting } from './pages/public/KindHosting';
+import { HostingKind, ServerKind, kindInfo } from './hostingKinds';
 
 // Auth Pages
 import { Login } from './pages/auth/Login';
@@ -73,6 +75,7 @@ import { AdminHostingPlans } from './pages/admin/AdminHostingPlans';
 import { AdminStore } from './pages/admin/AdminStore';
 import { AdminHostingSettings } from './pages/admin/AdminHostingSettings';
 import { AdminStripe } from './pages/admin/AdminStripe';
+import { AdminHostingTypes } from './pages/admin/AdminHostingTypes';
 
 // Native VPS panel (customer + admin)
 import { VpsList } from './pages/vps/VpsList';
@@ -89,8 +92,8 @@ import { AdminVpsActivity } from './pages/admin/AdminVpsActivity';
 
 
 /** Customer pages share one panel shell (tab strip, announcement bar, payment watcher). It stays mounted between pages. */
-const CustomerShell: React.FC<{ enabled: boolean; currentPage: string; onNavigate: (p: string, params?: any) => void; children: React.ReactNode }> = ({ enabled, currentPage, onNavigate, children }) =>
-  enabled ? <PanelLayout currentPage={currentPage} onNavigate={onNavigate}>{children}</PanelLayout> : <>{children}</>;
+const CustomerShell: React.FC<{ enabled: boolean; currentPage: string; params?: Record<string, any>; onNavigate: (p: string, params?: any) => void; children: React.ReactNode }> = ({ enabled, currentPage, params, onNavigate, children }) =>
+  enabled ? <PanelLayout currentPage={currentPage} params={params} onNavigate={onNavigate}>{children}</PanelLayout> : <>{children}</>;
 
 /**
  * Where to send a signed-in user who lands on /login: only same-site paths. The value comes from the URL (?redirect=),
@@ -107,9 +110,23 @@ function safeRedirectPath(value: unknown, fallback = '/servers'): string {
   }
 }
 
+/**
+ * Which hosting type a page belongs to. A page whose type is switched off in Admin > Hosting Types renders the normal 404, so a host
+ * that does not sell (say) VPS has no VPS page anywhere, even for someone typing the address by hand.
+ */
+function kindOfPage(page: string, params: any): HostingKind | null {
+  if (page === 'bot' || page === 'servers') return 'bot';
+  if (page === 'vps' || page === 'vps-list' || page === 'vps-deploy' || page === 'vps-server') return 'vps';
+  if (page === 'website' || page === 'website-list') return 'website';
+  if (page === 'nodejs' || page === 'nodejs-list') return 'nodejs';
+  if (page === 'lavalink' || page === 'lavalink-list') return 'lavalink';
+  if (page === 'server-create') return (params?.kind as ServerKind) || 'bot';
+  return null;
+}
+
 function AppContent() {
   const { user, loading, logout } = useAuth();
-  const { brandName, maintenanceMode, maintenanceMessage, refreshBranding } = useBranding();
+  const { brandName, maintenanceMode, maintenanceMessage, refreshBranding, enabledHostings, hostingsLoaded, hasHosting } = useBranding();
 
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
 
@@ -163,7 +180,7 @@ function AppContent() {
   useEffect(() => {
     if (loading) return;
 
-    const publicPages = ['home', 'bot', 'vps', 'pricing', 'status', 'docs', 'terms', 'privacy', 'acceptable-use', 'legal', 'login', 'register', 'not-found'];
+    const publicPages = ['home', 'bot', 'vps', 'website', 'nodejs', 'lavalink', 'pricing', 'status', 'docs', 'terms', 'privacy', 'acceptable-use', 'legal', 'login', 'register', 'not-found'];
     const isPublic = publicPages.includes(currentPage);
     const isAdmin = currentPage.startsWith('admin-');
 
@@ -187,19 +204,27 @@ function AppContent() {
     }
   }, [user, loading, currentPage, pageParams, handleNavigate]);
 
+  // /servers is the bot-hosting page. On a host that does not sell bot hosting, land on the first type it does sell.
+  useEffect(() => {
+    if (loading || !hostingsLoaded || !user) return;
+    if (currentPage === 'servers' && !hasHosting('bot') && enabledHostings.length) {
+      handleNavigate(kindInfo(enabledHostings[0])!.panelPage, pageParams, { replace: true });
+    }
+  }, [loading, hostingsLoaded, user, currentPage, pageParams, hasHosting, enabledHostings, handleNavigate]);
+
   // Fade out the boot loader from index.html once the session has been restored
   useEffect(() => {
-    if (!loading) {
+    if (!loading && hostingsLoaded) {
       (window as any).__monoLoader?.hide();
     }
-  }, [loading]);
+  }, [loading, hostingsLoaded]);
 
-  // The MonoPanel boot loader (index.html) stays on screen while the session restores
-  if (loading) {
+  // The MonoPanel boot loader (index.html) stays on screen while the session and the list of hosting types load
+  if (loading || !hostingsLoaded) {
     return null;
   }
 
-  const isPublicPage = ['home', 'bot', 'vps', 'pricing', 'status', 'docs', 'terms', 'privacy', 'acceptable-use', 'legal', 'login', 'register', 'not-found'].includes(currentPage);
+  const isPublicPage = ['home', 'bot', 'vps', 'website', 'nodejs', 'lavalink', 'pricing', 'status', 'docs', 'terms', 'privacy', 'acceptable-use', 'legal', 'login', 'register', 'not-found'].includes(currentPage);
   const isAdminPage = currentPage.startsWith('admin-');
   const isCustomerPage = !isPublicPage && !isAdminPage;
 
@@ -255,80 +280,88 @@ function AppContent() {
     }
   }
 
+  const pageKind = kindOfPage(currentPage, pageParams);
+  const blocked = !!pageKind && !hasHosting(pageKind);
+  const page = blocked ? 'not-found' : currentPage;
   const pageContent = (
-    <PageTransition routeKey={currentPage}>
+    <PageTransition routeKey={page}>
               <div className="flex-1 flex flex-col">
                 {/* Public Views */}
-                {currentPage === 'home' && <Home onNavigate={handleNavigate} />}
-                {currentPage === 'bot' && <BotHosting onNavigate={handleNavigate} />}
-                {currentPage === 'vps' && <VpsHosting onNavigate={handleNavigate} />}
-                {currentPage === 'pricing' && <Pricing onNavigate={handleNavigate} />}
-                {currentPage === 'status' && <Status />}
-                {currentPage === 'docs' && <Docs />}
-                {currentPage === 'terms' && <LegalPage initialSlug="terms" onNavigate={handleNavigate} />}
-                {currentPage === 'privacy' && <LegalPage initialSlug="privacy" onNavigate={handleNavigate} />}
-                {currentPage === 'acceptable-use' && <LegalPage initialSlug="acceptable-use" onNavigate={handleNavigate} />}
-                {currentPage === 'legal' && <LegalPage initialSlug={pageParams?.initialSlug || 'terms'} onNavigate={handleNavigate} />}
-                {currentPage === 'not-found' && <NotFound onNavigate={handleNavigate} />}
+                {page === 'home' && <Home onNavigate={handleNavigate} />}
+                {page === 'bot' && <BotHosting onNavigate={handleNavigate} />}
+                {(page === 'website' || page === 'nodejs' || page === 'lavalink') && <KindHosting kind={page} onNavigate={handleNavigate} />}
+                {page === 'vps' && <VpsHosting onNavigate={handleNavigate} />}
+                {page === 'pricing' && <Pricing onNavigate={handleNavigate} />}
+                {page === 'status' && <Status />}
+                {page === 'docs' && <Docs />}
+                {page === 'terms' && <LegalPage initialSlug="terms" onNavigate={handleNavigate} />}
+                {page === 'privacy' && <LegalPage initialSlug="privacy" onNavigate={handleNavigate} />}
+                {page === 'acceptable-use' && <LegalPage initialSlug="acceptable-use" onNavigate={handleNavigate} />}
+                {page === 'legal' && <LegalPage initialSlug={pageParams?.initialSlug || 'terms'} onNavigate={handleNavigate} />}
+                {page === 'not-found' && <NotFound onNavigate={handleNavigate} />}
 
                 {/* Auth Views */}
-                {currentPage === 'login' && <Login onNavigate={handleNavigate} />}
-                {currentPage === 'register' && <Register onNavigate={handleNavigate} />}
+                {page === 'login' && <Login onNavigate={handleNavigate} />}
+                {page === 'register' && <Register onNavigate={handleNavigate} />}
 
                 {/* Customer Account Views */}
-                {currentPage === 'servers' && <ServersOverview onNavigate={handleNavigate} />}
-                {currentPage === 'server-create' && <CreateServer onNavigate={handleNavigate} />}
-                {currentPage === 'server' && <ServerDetail key={pageParams?.id} id={String(pageParams?.id || '')} onNavigate={handleNavigate} />}
-                {currentPage === 'vps-list' && <VpsList onNavigate={handleNavigate} />}
-                {currentPage === 'vps-deploy' && <VpsDeploy onNavigate={handleNavigate} />}
-                {currentPage === 'vps-server' && <VpsServer key={pageParams?.id} id={String(pageParams?.id || '')} onNavigate={handleNavigate} />}
-                {currentPage === 'upgrade' && <Upgrade onNavigate={handleNavigate} />}
-                {currentPage === 'store' && <Store onNavigate={handleNavigate} />}
-                {currentPage === 'earn' && <Earn onNavigate={handleNavigate} />}
-                {currentPage === 'addons' && <Addons onNavigate={handleNavigate} />}
-                {currentPage === 'billing' && <Billing onNavigate={handleNavigate} />}
-                {currentPage === 'checkout' && <Checkout onNavigate={handleNavigate} params={pageParams} />}
-                {currentPage === 'support' && <SupportTickets onNavigate={handleNavigate} />}
-                {currentPage === 'mail' && <Mail onNavigate={handleNavigate} />}
-                {currentPage === 'activity' && <ActivityLog />}
-                {currentPage === 'settings' && <UserSettings />}
+                {page === 'servers' && <ServersOverview onNavigate={handleNavigate} kind="bot" />}
+                {page === 'website-list' && <ServersOverview onNavigate={handleNavigate} kind="website" />}
+                {page === 'nodejs-list' && <ServersOverview onNavigate={handleNavigate} kind="nodejs" />}
+                {page === 'lavalink-list' && <ServersOverview onNavigate={handleNavigate} kind="lavalink" />}
+                {page === 'server-create' && <CreateServer key={pageParams?.kind || 'bot'} onNavigate={handleNavigate} kind={(pageParams?.kind as ServerKind) || 'bot'} />}
+                {page === 'server' && <ServerDetail key={pageParams?.id} id={String(pageParams?.id || '')} onNavigate={handleNavigate} />}
+                {page === 'vps-list' && <VpsList onNavigate={handleNavigate} />}
+                {page === 'vps-deploy' && <VpsDeploy onNavigate={handleNavigate} />}
+                {page === 'vps-server' && <VpsServer key={pageParams?.id} id={String(pageParams?.id || '')} onNavigate={handleNavigate} />}
+                {page === 'upgrade' && <Upgrade onNavigate={handleNavigate} />}
+                {page === 'store' && <Store onNavigate={handleNavigate} />}
+                {page === 'earn' && <Earn onNavigate={handleNavigate} />}
+                {page === 'addons' && <Addons onNavigate={handleNavigate} />}
+                {page === 'billing' && <Billing onNavigate={handleNavigate} />}
+                {page === 'checkout' && <Checkout onNavigate={handleNavigate} params={pageParams} />}
+                {page === 'support' && <SupportTickets onNavigate={handleNavigate} />}
+                {page === 'mail' && <Mail onNavigate={handleNavigate} />}
+                {page === 'activity' && <ActivityLog />}
+                {page === 'settings' && <UserSettings />}
 
                 {/* Admin Views */}
-                {currentPage === 'admin-dashboard' && <AdminDashboard onNavigate={handleNavigate} />}
-                {currentPage === 'admin-users' && <AdminUsers />}
-                {currentPage === 'admin-products' && <AdminProducts />}
-                {currentPage === 'admin-billing' && <AdminBilling />}
-                {currentPage === 'admin-coupons' && <AdminCoupons />}
-                {currentPage === 'admin-announcements' && <AdminAnnouncements />}
-                {currentPage === 'admin-support' && <AdminSupport />}
-                {currentPage === 'admin-mail' && <AdminMail />}
-                {currentPage === 'admin-audit-logs' && <AdminAuditLogs />}
-                {currentPage === 'admin-api-keys' && <AdminApiKeys onNavigate={handleNavigate} />}
-                {currentPage === 'admin-legal' && <AdminLegal />}
-                {currentPage === 'admin-settings' && <AdminSettings />}
-                {currentPage === 'admin-ads' && <AdminAds onNavigate={handleNavigate} />}
-                {currentPage === 'admin-hosting' && <AdminHosting onNavigate={handleNavigate} />}
-                {currentPage === 'admin-nodes' && <AdminNodes />}
-                {currentPage === 'admin-servers' && <AdminServers />}
-                {currentPage === 'admin-accounts' && <AdminAccounts />}
-                {currentPage === 'admin-images' && <AdminImages />}
-                {currentPage === 'admin-hosting-plans' && <AdminHostingPlans />}
-                {currentPage === 'admin-store' && <AdminStore />}
-                {currentPage === 'admin-hosting-settings' && <AdminHostingSettings />}
-                {currentPage === 'admin-stripe' && <AdminStripe />}
-                {currentPage === 'admin-addons' && <AdminAddons />}
-                {currentPage === 'admin-vps' && <AdminVpsOverview onNavigate={handleNavigate} />}
-                {currentPage === 'admin-vps-nodes' && <AdminVpsNodes />}
-                {currentPage === 'admin-vps-servers' && <AdminVpsServers />}
-                {currentPage === 'admin-vps-plans' && <AdminVpsPlans />}
-                {currentPage === 'admin-vps-orders' && <AdminVpsOrders />}
-                {currentPage === 'admin-vps-images' && <AdminVpsImages />}
-                {currentPage === 'admin-vps-settings' && <AdminVpsSettings />}
-                {currentPage === 'admin-vps-activity' && <AdminVpsActivity />}
-                {currentPage === 'admin-discord' && <AdminDiscord />}
-                {currentPage === 'admin-manager-bot' && <AdminManagerBot />}
-                {currentPage === 'admin-appearance' && <AdminAppearance />}
-                {currentPage === 'admin-panel-link' && <PanelLinkSettings />}
+                {page === 'admin-hosting-types' && <AdminHostingTypes />}
+                {page === 'admin-dashboard' && <AdminDashboard onNavigate={handleNavigate} />}
+                {page === 'admin-users' && <AdminUsers />}
+                {page === 'admin-products' && <AdminProducts />}
+                {page === 'admin-billing' && <AdminBilling />}
+                {page === 'admin-coupons' && <AdminCoupons />}
+                {page === 'admin-announcements' && <AdminAnnouncements />}
+                {page === 'admin-support' && <AdminSupport />}
+                {page === 'admin-mail' && <AdminMail />}
+                {page === 'admin-audit-logs' && <AdminAuditLogs />}
+                {page === 'admin-api-keys' && <AdminApiKeys onNavigate={handleNavigate} />}
+                {page === 'admin-legal' && <AdminLegal />}
+                {page === 'admin-settings' && <AdminSettings />}
+                {page === 'admin-ads' && <AdminAds onNavigate={handleNavigate} />}
+                {page === 'admin-hosting' && <AdminHosting onNavigate={handleNavigate} />}
+                {page === 'admin-nodes' && <AdminNodes />}
+                {page === 'admin-servers' && <AdminServers />}
+                {page === 'admin-accounts' && <AdminAccounts />}
+                {page === 'admin-images' && <AdminImages />}
+                {page === 'admin-hosting-plans' && <AdminHostingPlans />}
+                {page === 'admin-store' && <AdminStore />}
+                {page === 'admin-hosting-settings' && <AdminHostingSettings />}
+                {page === 'admin-stripe' && <AdminStripe />}
+                {page === 'admin-addons' && <AdminAddons />}
+                {page === 'admin-vps' && <AdminVpsOverview onNavigate={handleNavigate} />}
+                {page === 'admin-vps-nodes' && <AdminVpsNodes />}
+                {page === 'admin-vps-servers' && <AdminVpsServers />}
+                {page === 'admin-vps-plans' && <AdminVpsPlans />}
+                {page === 'admin-vps-orders' && <AdminVpsOrders />}
+                {page === 'admin-vps-images' && <AdminVpsImages />}
+                {page === 'admin-vps-settings' && <AdminVpsSettings />}
+                {page === 'admin-vps-activity' && <AdminVpsActivity />}
+                {page === 'admin-discord' && <AdminDiscord />}
+                {page === 'admin-manager-bot' && <AdminManagerBot />}
+                {page === 'admin-appearance' && <AdminAppearance />}
+                {page === 'admin-panel-link' && <PanelLinkSettings />}
               </div>
             </PageTransition>
   );
@@ -370,7 +403,7 @@ function AppContent() {
         {/* Content Viewport */}
         <main className="flex-1 min-w-0 overflow-x-clip min-h-[calc(100dvh-4rem)] flex flex-col justify-between p-4 lg:p-6">
           <div className="flex-1 flex flex-col">
-            <CustomerShell enabled={isCustomerPage && !!user} currentPage={currentPage} onNavigate={handleNavigate}>
+            <CustomerShell enabled={isCustomerPage && !!user && !blocked} currentPage={currentPage} params={pageParams} onNavigate={handleNavigate}>
             {pageContent}
             </CustomerShell>
           </div>

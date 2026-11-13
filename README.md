@@ -4,35 +4,31 @@
 
 <br/>
 
-# MonoPanel Panel
-
-**The website, billing system, hosting control panel and Discord bot behind MonoPanel.**
+**The website, billing system and admin panel behind MonoPanel — Discord Bot Hosting & VPS Hosting.**
 <br/>
-<sub>Sell Discord bot hosting and VPS hosting from one self-hosted platform. Black & white. Fast. Yours to edit.</sub>
+<sub>Black & white. Fast. Built to be run and edited by the people who host on it.</sub>
 
 <br/><br/>
 
-[![License](https://img.shields.io/badge/license-MPOL--1.0-white?style=for-the-badge&labelColor=000000)](LICENSE)
-[![Node](https://img.shields.io/badge/Node-%E2%89%A522.13-white?style=for-the-badge&logo=nodedotjs&logoColor=white&labelColor=000000)](https://nodejs.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12%2B-white?style=for-the-badge&logo=postgresql&logoColor=white&labelColor=000000)](https://www.postgresql.org)
+[![License](https://img.shields.io/badge/license-Attribution-white?style=for-the-badge&labelColor=000000)](LICENSE)
 [![React](https://img.shields.io/badge/React-19-white?style=for-the-badge&logo=react&logoColor=white&labelColor=000000)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-white?style=for-the-badge&logo=typescript&logoColor=white&labelColor=000000)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-6-white?style=for-the-badge&logo=vite&logoColor=white&labelColor=000000)](https://vite.dev)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4-white?style=for-the-badge&logo=tailwindcss&logoColor=white&labelColor=000000)](https://tailwindcss.com)
+[![Node](https://img.shields.io/badge/Node-%E2%89%A518-white?style=for-the-badge&logo=nodedotjs&logoColor=white&labelColor=000000)](https://nodejs.org)
 [![PRs](https://img.shields.io/badge/PRs-welcome-white?style=for-the-badge&labelColor=000000)](CONTRIBUTING.md)
 
 <br/>
 
-[**Overview**](#-overview) ·
 [**Preview**](#-preview) ·
 [**Features**](#-features) ·
-[**Architecture**](#-architecture) ·
 [**Quick start**](#-quick-start) ·
-[**Configuration**](#-configuration) ·
+[**Architecture**](#-architecture) ·
+[**Admin panel**](#-admin-panel) ·
+[**Config**](#-configuration) ·
 [**Deploy**](#-production-deployment) ·
-[**Security**](#-security) ·
-[**FAQ**](#-faq) ·
-[**License**](#-license)
+[**Security**](#-security-checklist) ·
+[**Contribute**](#-contributing)
 
 </div>
 
@@ -40,47 +36,26 @@
 
 ---
 
-## ◼ Overview
+## ◼ What is MonoPanel?
 
-MonoPanel Panel is the full-stack web platform that runs a hosting business. One repository gives you:
+MonoPanel is the full-stack web platform for **MonoPanel**. One repo gives you a public marketing site, customer accounts, a billing and order system, a support desk, an in-dashboard mail inbox and a complete admin panel — with **no external database to set up**.
 
-- a public marketing site with live pricing, a status page, docs and legal pages
-- customer accounts, credits, coupons, orders, support tickets and an in-dashboard inbox
-- a **native hosting panel** (console, file manager, backups, databases, schedules, SFTP, team access) for Discord bots, apps and game servers
-- a **native VPS panel** (deploy, power, SSH, web terminal, file manager, reinstall, renew)
-- a **coin economy** where free users earn renewals by watching ads or visiting sponsor links
-- a **Discord Manager Bot** that runs inside the same process and lets customers and staff manage services from Discord
-- a full **admin console** with 40+ pages, audit logs and scoped REST API keys
+It can sell up to five kinds of hosting. **You choose which ones in Admin → Hosting Types**; anything you leave off disappears from the whole site (home page, pricing, navigation, checkout, customer panel, admin menu and API), so you only ever sell what you actually run.
 
-Everything is stored in PostgreSQL. There is no external queue, cache or search service to set up.
+| Hosting type | What customers get |
+| --- | --- |
+| 🤖 **Bot Hosting** | Always-on bot processes: console, files, backups, Git deploys |
+| 🖥️ **VPS Hosting** | Root SSH virtual servers with your OS images |
+| 🌐 **Website Hosting** | Full-stack sites: front end + back end, free subdomain, custom domains with HTTPS, Git deploys |
+| ⬢ **Node.js Hosting** | Node 20/22/24 apps with install/build tasks, Git deploy, live console |
+| 🎵 **Lavalink Hosting** | Lavalink v4 nodes with generated config, plugin manager, live player stats and connection details |
 
-<table>
-<tr>
-<td width="50%" align="center">
+Plans, pricing and features are pulled live from your product catalogue. `.env.example` starts with **all five** types switched on. Change the selection any time on the Hosting Types page: the website updates immediately for every visitor (no rebuild, no restart). An install with no `MONOPANEL_HOSTINGS` line keeps selling Bot + VPS only, as earlier versions did.
 
-### 🤖 Discord Bot & App Hosting
-Node.js, Python and other software images, Git deploys, always-on servers.
-
-</td>
-<td width="50%" align="center">
-
-### 🖥️ VPS Hosting
-Docker-backed VPSes with SSH, a browser terminal and your choice of OS image.
-
-</td>
-</tr>
-</table>
+**Choosing the selection without the admin UI:** set `MONOPANEL_HOSTINGS="bot,nodejs,lavalink"` in `.env`. It is the starting selection; once an admin saves one on the Hosting Types page, that choice wins.
 
 > [!NOTE]
-> This repository is the **panel** half of MonoPanel. Servers and VPSes actually run on the **MonoPanel daemon**, one agent per node. The panel never touches customer machines directly: it sends HMAC-signed requests to the daemon.
-
-### The MonoPanel ecosystem
-
-| Part | Repository | Job |
-|---|---|---|
-| **Panel** (this repo) | [`TeamMonoPanel/MonoPanel-Panel`](https://github.com/TeamMonoPanel/MonoPanel-Panel) | Website, accounts, billing, support, admin console, Discord bot |
-| **Daemon** | [`TeamMonoPanel/MonoPanel-daemon`](https://github.com/TeamMonoPanel/MonoPanel-daemon) | One agent per node: runs customer servers and VPSes |
-| **Installer** | [`TeamMonoPanel/MonoPanel-Installer`](https://github.com/TeamMonoPanel/MonoPanel-Installer) | Guided installer for the panel and daemon |
+> This repository is the **panel** half of MonoPanel: the website, billing system and admin panel. Every hosting type (bots, VPS, websites, Node.js, Lavalink) is run by the one **MonoPanel daemon** (the `daemon/` repository), one daemon per node. A node can be limited to some types with `NODE_SERVICES` / the node's *Services* setting. The panel never touches customer machines directly; it only sends signed requests to the daemon.
 
 ---
 
@@ -99,7 +74,7 @@ Docker-backed VPSes with SSH, a browser terminal and your choice of OS image.
 <img src="assets/preview-discord-bot.png" alt="Discord Bot Hosting page" width="100%" />
 
 **Discord Bot Hosting**
-<br/><sub>Plans and prices pulled live from your catalogue</sub>
+<br/><sub>Node.js, Python, Bun & Go, always on</sub>
 
 </td>
 <td width="50%" align="center">
@@ -107,9 +82,22 @@ Docker-backed VPSes with SSH, a browser terminal and your choice of OS image.
 <img src="assets/preview-vps.png" alt="VPS Hosting page" width="100%" />
 
 **VPS Hosting**
-<br/><sub>Full root access, choose your OS image</sub>
+<br/><sub>Full root access, any OS image</sub>
 
 </td>
+</tr>
+</table>
+
+---
+
+## ◼ At a glance
+
+<table>
+<tr>
+<td align="center" width="25%"><h3>2</h3><sub>Products sold</sub></td>
+<td align="center" width="25%"><h3>5</h3><sub>User roles</sub></td>
+<td align="center" width="25%"><h3>1</h3><sub>Database: PostgreSQL</sub></td>
+<td align="center" width="25%"><h3>4</h3><sub>Payment methods</sub></td>
 </tr>
 </table>
 
@@ -123,49 +111,11 @@ Docker-backed VPSes with SSH, a browser terminal and your choice of OS image.
 
 | | |
 |---|---|
-| **Home** | Black & white landing page with product cards, infrastructure section, stats and FAQ |
-| **Live pricing** | Cards read prices and feature lists from your real plans, so the site never drifts from what you sell |
+| **Home page** | Fully redesigned black & white layout: ticker, product cards, infrastructure section, stats, FAQ |
+| **Live pricing** | Product cards read prices and feature lists from your real plans, so the site never drifts from what you sell |
 | **Product pages** | Dedicated **Bot Hosting**, **VPS Hosting** and **Pricing** pages |
 | **Status page** | Incident tracking and scheduled maintenance |
-| **Docs & legal** | Docs page plus editable legal pages (Terms, Privacy, ...) from **Admin → Legal Pages** |
-| **Global search** | Command-palette style search across the site and dashboards |
-
-</details>
-
-<details open>
-<summary><b>🧩 Native hosting panel (bots, apps, games)</b></summary>
-<br/>
-
-| Area | What customers get |
-|---|---|
-| **Create wizard** | Pick software, name, location and node; limits come from the plan |
-| **Console** | Live console and command input, proxied by the panel so node addresses and secrets stay private |
-| **Files** | Browse, edit, upload, download, bulk download, pull from a URL, recycle bin |
-| **Backups** | Create, restore and delete backups (limit per plan) |
-| **Databases** | One-click MySQL/MariaDB databases with password rotation (needs `DB_HOST_*`) |
-| **Startup** | Per-image variables with validation rules (Git repo, branch, main file, extra packages, ...) |
-| **Schedules** | Cron tasks (UTC) that send commands, change power state or take backups |
-| **Team access** | Subusers with fine-grained permissions: `console.read`, `console.command`, `power`, `files.read`, `files.write`, `backups`, `schedules`, `addons`, `sftp`, `settings` |
-| **SFTP** | Per-person credentials, optional read-only, only a scrypt hash is stored |
-| **Addons** | Install plugins or starter templates from an addon store, refunded automatically if the node fails |
-| **Switch node** | Move a server with all its files to another node: archive, checksum, signed stream, verify, switch, roll back on any failure |
-| **Activity** | Per-server audit trail of every mutating action |
-
-Seeded software images: **Node.js**, **Python**, **Static Website** and **Minecraft (Paper)**. Add your own under **Admin → Software Images**.
-
-</details>
-
-<details open>
-<summary><b>🖥️ Native VPS panel</b></summary>
-<br/>
-
-- Plans with vCPU, RAM, disk and bandwidth, plus OS images (Ubuntu 20.04 / 22.04 / 24.04, Debian 11 / 12 out of the box, all editable)
-- Deploy wizard with location, OS and name; instant deploy on payment or manual staff approval
-- Power controls, live stats, SSH login details, root password reset, rename, **reinstall** and **renew**
-- Browser **command runner**, **sshx** sessions and a **file manager**, each switchable from **Admin → VPS Settings**
-- Node placement with RAM, disk and CPU ceilings, overallocation, per-node SSH port range and a drain switch
-- Expiry reminders by mail, automatic stop on expiry, and deletion after a configurable grace period
-- Every VPS order is linked to the normal billing order, so revenue lives in one place
+| **Docs & legal** | Docs page plus editable legal pages (Terms, Privacy, …) |
 
 </details>
 
@@ -173,131 +123,153 @@ Seeded software images: **Node.js**, **Python**, **Static Website** and **Minecr
 <summary><b>🔐 Accounts & authentication</b></summary>
 <br/>
 
-- Email and password sign-up and login
+- Email + password sign-up and login
 - **Google** sign-in (Firebase) and **Discord** OAuth, both optional
-- Roles: `user` · `support` · `moderator` · `admin` · `super_admin`
-- JWT sessions, bcrypt-hashed passwords, rate limiting, CORS allow-list and CSRF origin checks
-- Optional **anti-abuse**: VPN / proxy / Tor / datacenter blocking through `proxycheck`, `ipqualityscore` or a custom provider, registration caps per IP and login lockouts
+- Role system: `user` · `support` · `moderator` · `admin` · `super_admin`
+- JWT sessions, hashed passwords (bcryptjs), API rate limiting and a CORS allow-list
+- Optional **VPN / proxy blocking** to reduce abuse
 
 </details>
 
 <details open>
-<summary><b>💳 Billing & payments</b></summary>
+<summary><b>👤 Customer dashboard</b></summary>
 <br/>
 
-| Method | How it works |
+| Area | What customers get |
 |---|---|
-| **Account credits** | Pay for plans, VPSes and upgrades from the customer's balance |
-| **Stripe Checkout** | Plan purchases are confirmed by the **signed Stripe webhook**, never by the browser redirect |
-| **UPI** | QR code or UPI ID, customer submits the transaction reference |
-| **Bank transfer** | Customer submits the NEFT / IMPS / wire reference |
-| **Crypto** | Wallet address and network of your choice, customer submits the TX hash |
-| **Gift cards** | Amazon and Google Play codes, verified by staff |
+| **Overview** | Account summary, credits balance, order history |
+| **Billing & Checkout** | Add credits, place orders, redeem **coupons** |
+| **Support Tickets** | Open and follow tickets with staff |
+| **Mail** | In-dashboard inbox with unread counter, mark-all-read, delete |
+| **Activity Log** | Account activity history |
+| **Settings** | Link a Discord account, configure webhooks |
+| **Quick Links** | One-click sidebar shortcuts to whatever you choose ([details](#-panel-integration--quick-links)) |
 
-Manual payments (UPI, bank, crypto, gift cards) are **verified by staff before credits are added**. Coupons support percent or fixed discounts and usage limits. Billing periods (monthly, 6 months, yearly, or your own) carry per-period discounts or hard price overrides.
+</details>
+
+<details open>
+<summary><b>💳 Billing</b></summary>
+<br/>
+
+Pay with **UPI**, **bank transfer**, **crypto** or **gift cards**.
+
+Every manual payment is **verified by staff before credits are added**, so nothing is granted on trust. Coupons, orders and pending approvals are all managed from the admin panel.
 
 > [!WARNING]
-> Adding **credits by card** through the legacy top-up route is intentionally blocked server-side. Card payments go through Stripe Checkout on plan purchases only.
+> Instant card payments are **not available**. The Stripe toggle exists as a placeholder only and is blocked server-side until a real processor is integrated.
 
 </details>
 
 <details open>
-<summary><b>🪙 Coin economy & renewals</b></summary>
+<summary><b>✉️ Mail</b></summary>
 <br/>
 
-Free plans can stay free. Users earn a configurable coin currency (name it yourself) by watching ads, visiting sponsor links or claiming a daily bonus, then spend it in the **Store**:
+A built-in inbox so you can message customers without leaving the platform.
 
-| Store item | Effect |
+- Staff (`support`, `moderator`, `admin`, `super_admin`) can message **one user** or **broadcast to everyone**
+- Customers get an inbox with an **unread counter**
+- Admins see every sent message with **read receipts** (e.g. `12/40 read`), grouped per broadcast
+
+</details>
+
+<details open>
+<summary><b>🎨 Themes & fonts</b></summary>
+<br/>
+
+Ships with the **MonoPanel Black & White** theme. **Chakra Petch** for headings and the logo, **Quicksand** for body text. Switch themes and fonts from **Admin → Fonts & Themes**.
+
+</details>
+
+<details open>
+<summary><b>💬 Discord integration</b></summary>
+<br/>
+
+Optional account linking plus account and billing notifications through a Discord bot and webhooks.
+
+</details>
+
+---
+
+## ✦ Role matrix
+
+| Capability | `user` | `support` | `moderator` | `admin` | `super_admin` |
+|---|:-:|:-:|:-:|:-:|:-:|
+| Customer dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Send mail (one / broadcast) | ➖ | ✅ | ✅ | ✅ | ✅ |
+| Admin panel access | ➖ | ⚙️ | ⚙️ | ✅ | ✅ |
+
+<sub>✅ full access · ⚙️ scoped by the server's role checks · ➖ none. Exact permissions are enforced in <code>server/auth.ts</code>.</sub>
+
+---
+
+## ✦ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["🖥️ Browser"]
+        UI["React 19 + Tailwind 4<br/>Vite SPA"]
+    end
+
+    subgraph Server["⚙️ Node.js · Express 4 · TypeScript"]
+        API["/api/v1/*"]
+        AUTH["JWT · roles · rate limit · CORS"]
+        SVC["Discord bot · Webhooks"]
+    end
+
+    DB[("🗄️ PostgreSQL")]
+    EXT["🔌 Google (Firebase)<br/>Discord OAuth<br/>VPN check API"]
+
+    UI -->|HTTPS| API
+    API --> AUTH
+    API --> DB
+    API --> SVC
+    SVC --> EXT
+    AUTH --> EXT
+```
+
+### Request lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Customer
+    participant W as MonoPanel
+    participant S as Staff (admin)
+    C->>W: Create order / add credits (UPI, bank, crypto, gift card)
+    W-->>C: Order recorded as pending
+    W->>S: Appears in Orders & Billing queue
+    S->>W: Verify payment
+    W-->>C: Credits added, notification sent
+```
+
+### Tech stack
+
+| Layer | Tools |
 |---|---|
-| Spec upgrades | Temporary or permanent extra RAM, CPU or disk for one server |
-| Renewals | Extend a server by N days |
-| Temporary premium | Try a paid plan for a few days |
-| Server packs | One extra server with its own specs |
-| Server slots | Raise the account's server limit |
+| **Frontend** | React 19, TypeScript, Vite 6, Tailwind CSS 4, Motion, Lucide icons |
+| **Backend** | Node.js, Express 4, TypeScript (run with `tsx`) |
+| **Storage** | **PostgreSQL** only (`DATABASE_URL`), like Pterodactyl and Jexactyl. No SQLite, no JSON files |
+| **Auth** | JSON Web Tokens, bcryptjs, Firebase (Google sign-in), Discord OAuth2 |
+| **Integrations** | discord.js 14 |
 
-Renewal methods per plan: `ads`, `blog`, `coins`, `payment`. Servers stop when they expire and are **deleted 24 hours later** (a hard-coded constant, intentionally not configurable).
+---
 
-</details>
+## ✦ Panel + daemon
 
-<details open>
-<summary><b>🤖 Discord Manager Bot</b></summary>
-<br/>
+| Part | Folder | Job |
+|---|---|---|
+| **Panel** (this repo) | `panel/` | Website, accounts, billing, support, admin panel |
+| **Daemon** | `daemon/` | One agent per node: runs customer servers and customer VPSes |
 
-Enter the bot credentials in **Admin → Discord Bot**. The bot logs in inside the panel process, registers its slash commands and can auto-start with the panel.
+The panel talks to every daemon over HMAC-signed HTTP. There is **no installer yet**: set up the panel with the quick start below and the daemon by hand (see the daemon README).
 
-| Category | Commands |
-|---|---|
-| **General** | `/help` `/ping` `/about` `/nodes` |
-| **Account** | `/link` `/account` |
-| **Hosting** | `/hosting plans` `software` `create` `list` `info` `power` `renew` `upgrade` `delete` |
-| **VPS** | `/vps plans` `create` `list` `manage` `info` `power` `ssh` `resetpass` `rename` `renew` `reinstall` `exec` `logs` |
-| **Staff** | `/admin lookup` `stats` `suspend` `unsuspend` `ban` `unban` `sync` |
+---
 
-Permission tiers are `customer`, `staff`, `admin` and `owner`, derived from the linked panel role, configured Discord role IDs and owner IDs. Secrets such as SSH logins are delivered by **direct message**. Replies use Discord's Components V2 layout. Prefix commands are available when the message-content intent is enabled.
-
-</details>
-
-<details open>
-<summary><b>🛠️ Admin console</b></summary>
-<br/>
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-**Hosting**
-- Nodes
-- Server Management
-- Account Management
-- Software Images
-- Addon Store
-
-**VPS Hosting**
-- VPS Overview
-- VPS Servers & Nodes
-- VPS Plans & Orders
-- OS Images
-- VPS Settings & Activity
-
-</td>
-<td width="33%" valign="top">
-
-**Plans & Revenue**
-- Plans & Limits
-- Expiry & Renewals
-- Store & Economy
-- Stripe Setup
-- Orders & Payments
-- Coupons
-
-**Growth**
-- Ad Center (12 placements)
-- Announcements
-
-</td>
-<td width="33%" valign="top">
-
-**Community**
-- User Accounts
-- Support Desk
-- Mail (one user or broadcast, with read receipts)
-- Discord Bot
-
-**System**
-- External Panel Link
-- Appearance (themes & fonts)
-- Legal Pages
-- Audit Logs
-- REST API Keys
-- Platform Settings
-
-</td>
-</tr>
-</table>
+## ✦ Admin panel
 
 <div align="center">
 
-<img src="assets/preview-admin-combined.png" alt="MonoPanel admin console: control plane menu and system overview" width="80%" />
+<img src="assets/preview-admin-combined.png" alt="MonoPanel admin panel: control plane menu and system overview" width="80%" />
 
 </div>
 
@@ -307,7 +279,7 @@ Permission tiers are `customer`, `staff`, `admin` and `owner`, derived from the 
 
 <img src="assets/preview-admin-menu.png" alt="Admin control plane menu" width="100%" />
 
-**Control plane**
+**Admin control plane**
 <br/><sub>Every admin tool in one sidebar</sub>
 
 </td>
@@ -322,219 +294,132 @@ Permission tiers are `customer`, `staff`, `admin` and `owner`, derived from the 
 </tr>
 </table>
 
-</details>
+<table>
+<tr>
+<td width="33%" valign="top">
 
-<details>
-<summary><b>🔑 REST API keys</b></summary>
-<br/>
+**People**
+- User Accounts
+- Support Queue
+- Mail Center
 
-Create keys under **Admin → API Keys** with a name, description, **scopes** (for example `users.read`, `users.manage`, `orders.read`, or `*`), an **IP allow-list** and an **expiry date**. Send them in the `X-API-Key` header.
+</td>
+<td width="33%" valign="top">
 
-</details>
+**Commerce**
+- Products & Plans
+- Orders & Billing
+- Coupons
 
-### Role matrix
+</td>
+<td width="33%" valign="top">
 
-| Capability | `user` | `support` | `moderator` | `admin` | `super_admin` |
-|---|:-:|:-:|:-:|:-:|:-:|
-| Customer dashboard and panels | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Send mail (one / broadcast) | ➖ | ✅ | ✅ | ✅ | ✅ |
-| Bot staff commands | ➖ | ✅ | ✅ | ✅ | ✅ |
-| Admin console | ➖ | ⚙️ | ⚙️ | ✅ | ✅ |
-| Bot admin commands, access during maintenance mode | ➖ | ➖ | ➖ | ✅ | ✅ |
-| Bot owner tier | ➖ | ➖ | ➖ | ➖ | ✅ |
+**Platform**
+- System Overview
+- Announcements
+- Discord Integration
+- Fonts & Themes
+- Audit Trail
+- REST API Keys
+- Legal & Policies
+- Platform Settings
+- Panel Integration
 
-<sub>✅ full access · ⚙️ scoped by server-side role checks · ➖ none. Exact permissions are enforced in <code>server/auth.ts</code> and the route files.</sub>
+</td>
+</tr>
+</table>
 
----
+**System Overview** shows total users, total revenue (with the last 30 days), orders with pending approvals, and support tickets awaiting a reply. **Quick Actions** jump straight to pending orders, open tickets and coupons, and **User Snapshot** splits accounts into total, active and suspended.
 
-## ✦ Architecture
+### 🔗 Panel Integration & Quick Links
 
-```mermaid
-flowchart LR
-    subgraph Client["🖥️ Browser"]
-        UI["React 19 + Tailwind 4<br/>Vite SPA"]
-    end
+**Admin → Panel Integration** lets you add, edit and remove **Quick Links** (label + URL, up to **12**), for example a Discord bot panel, a VPS panel or a status page.
 
-    subgraph Panel["⚙️ MonoPanel Panel · Node.js 22 · Express 4 · TypeScript"]
-        API["/api/v1/*"]
-        SEC["JWT · roles · rate limits<br/>CORS · CSRF · API keys"]
-        HOST["Hosting + VPS services<br/>schedulers · billing"]
-        BOT["Discord Manager Bot"]
-    end
-
-    DB[("🗄️ PostgreSQL")]
-    D1["🧱 MonoPanel daemon<br/>Node A"]
-    D2["🧱 MonoPanel daemon<br/>Node B"]
-    EXT["🔌 Stripe · Discord · Firebase<br/>IP-risk provider · MySQL host"]
-
-    UI -->|HTTPS| API
-    API --> SEC
-    API --> HOST
-    API --> DB
-    HOST -->|"HMAC-signed HTTP"| D1
-    HOST -->|"HMAC-signed HTTP"| D2
-    HOST --> EXT
-    BOT --> HOST
-    BOT --> EXT
-```
-
-### How the panel talks to a daemon
-
-Every request carries `X-Mono-Ts`, `X-Mono-Nonce` and `X-Mono-Sig`. The signature is an HMAC-SHA256 over the timestamp, a random nonce, the HTTP method, the path with query and the SHA-256 of the body, using a per-node secret that is stored **AES-GCM encrypted** in the database and never sent to the browser. Node-to-node transfers use a streaming variant where the payload checksum travels inside the signed URL.
-
-One daemon can serve both server nodes (**Admin → Nodes**) and VPS nodes (**Admin → VPS Nodes**). If you register the same host and port in both places, the panel uses one shared secret.
-
-### Order and payment lifecycle
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant C as Customer
-    participant P as MonoPanel
-    participant S as Stripe
-    participant A as Staff
-    participant D as Daemon
-
-    alt Stripe Checkout
-        C->>P: Buy plan
-        P->>S: Create Checkout session
-        S-->>P: Signed webhook: paid
-    else UPI / bank / crypto / gift card
-        C->>P: Submit order and payment reference
-        P-->>C: Order recorded as pending
-        A->>P: Verify payment
-    end
-    P-->>C: Credits or plan applied, notification sent
-    C->>P: Deploy server or VPS
-    P->>D: Signed create request
-    D-->>P: Installing, then running
-```
-
-### Server lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> installing
-    installing --> running
-    installing --> install_failed
-    running --> offline
-    offline --> running
-    running --> transferring: switch node
-    transferring --> running
-    running --> suspended: staff action
-    suspended --> running: unsuspend
-    running --> expired: expiry reached
-    expired --> running: renewed
-    expired --> [*]: deleted after 24 hours
-```
-
-### Tech stack
-
-| Layer | Tools |
-|---|---|
-| **Frontend** | React 19, TypeScript, Vite 6, Tailwind CSS 4, Motion, Lucide icons |
-| **Backend** | Node.js ≥ 22.13, Express 4, TypeScript (run with `tsx`, bundled with `esbuild`) |
-| **Storage** | PostgreSQL 12+ through a document store (`mp_docs`, `mp_maps`, `mp_kv`, `mp_meta`) |
-| **Auth** | JSON Web Tokens, bcryptjs, Firebase (Google sign-in), Discord OAuth2 |
-| **Integrations** | discord.js 14, Stripe (REST, no SDK), MySQL/MariaDB (`mysql2`), pg |
+- Links that have a URL appear in every customer's dashboard sidebar and open in a new tab
+- Optional **auto-provisioning** (Pterodactyl / Pelican-compatible panel via API) is available under *Advanced* and is **off by default**
 
 ---
 
 ## ⚡ Quick start
 
 > [!IMPORTANT]
-> You need **Node.js 22.13 or newer**, **npm**, and a **PostgreSQL 12+** database. Install `postgresql-client` on the panel machine if you want the in-panel database backups (`pg_dump`).
+> Requires **Node.js 18+** and **npm**.
 
 <details open>
 <summary><b>1 · Clone & install</b></summary>
 
 ```bash
-git clone https://github.com/TeamMonoPanel/MonoPanel-Panel.git
-cd MonoPanel-Panel
+git clone <your-panel-repo-url> monopanel-panel
+cd monopanel-panel
 npm install
 ```
 
 </details>
 
 <details open>
-<summary><b>2 · Create the database</b></summary>
+<summary><b>2 · Configure</b></summary>
+
+```bash
+cp .env.example .env
+```
+
+Create the PostgreSQL database (12+) and point the panel at it. MonoPanel has no embedded database, like Pterodactyl and Jexactyl:
 
 ```sql
 CREATE USER monopanel WITH PASSWORD 'change-me';
 CREATE DATABASE monopanel OWNER monopanel;
 ```
 
-Tables are created automatically on first start.
-
-</details>
-
-<details open>
-<summary><b>3 · Configure</b></summary>
-
-```bash
-cp .env.example .env
-```
-
-Set at least the database URL and your public URL:
-
 ```env
 DATABASE_URL="postgres://monopanel:change-me@127.0.0.1:5432/monopanel"
-APP_URL="http://localhost:3000"
 ```
 
-`JWT_SECRET` and `APP_SECRET` can stay empty: strong values are generated into `data/.jwt_secret` and `data/.app_secret` (mode `600`). To set your own:
+Set at least `JWT_SECRET` **before the first start**:
+
+```env
+JWT_SECRET="a-long-random-string"
+```
+
+Generate a strong secret:
 
 ```bash
-openssl rand -base64 48
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-> [!WARNING]
-> **Back up `APP_SECRET` (or `data/.app_secret`).** It encrypts node secrets and Stripe keys in the database. Lose it and you must re-enter them.
-
-**Default super admin** (created on first start only):
+**Default admin account** (created on first start only):
 
 | | |
 |---|---|
 | Email | `admin@monopanel.com` |
 | Password | `MonoPanelOPP` |
 
-Set `MONOPANEL_ADMIN_EMAIL` and `MONOPANEL_ADMIN_PASSWORD` in `.env` **before the first start** to use your own.
+To use your own, set `MONOPANEL_ADMIN_EMAIL` and `MONOPANEL_ADMIN_PASSWORD` in `.env` before the first start.
 
 > [!CAUTION]
-> These defaults are public. Change the password right after your first login. The server logs a warning while the default is in use.
+> These defaults are public. **Change the password right after your first login**, or set your own values in `.env`. The server logs a warning while the default password is in use.
 
 </details>
 
 <details open>
-<summary><b>4 · Run in development</b></summary>
+<summary><b>3 · Run in development</b></summary>
 
 ```bash
 npm run dev
 ```
 
-Open **http://localhost:3000** and sign in. The API and the Vite dev server run in one process.
+Open **http://localhost:3000** and sign in with the admin account from your `.env`.
 
 </details>
 
 <details open>
-<summary><b>5 · Build & run in production</b></summary>
+<summary><b>4 · Build & run in production</b></summary>
 
 ```bash
 npm run build
 npm start
 ```
 
-`npm run build` compiles the frontend with Vite and bundles the server to `dist/server.cjs`. Any `VITE_*` variable (Firebase) is read **at build time**, so set it before building. Put the app behind a reverse proxy for HTTPS (see [Production deployment](#-production-deployment)).
-
-</details>
-
-<details open>
-<summary><b>6 · Add your first node</b></summary>
-
-1. Install the **MonoPanel daemon** on a machine (see the daemon repository).
-2. In **Admin → Nodes** (servers) or **Admin → VPS Nodes** (VPSes) add the node: public address, daemon host, daemon port (default `3002`), scheme and port range.
-3. Run the command the panel shows on the node. It contains the node's secret.
-4. Create plans, software images and OS images, then try a deploy as a normal user.
+The server listens on port **3000**. Put it behind a reverse proxy for HTTPS and set `APP_URL` and `ALLOWED_ORIGINS` to your public domain.
 
 </details>
 
@@ -542,23 +427,272 @@ npm start
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Starts the API and the Vite middleware with `tsx` |
+| `npm run dev` | Starts the API and the Vite dev server together |
 | `npm run build` | Builds the frontend and bundles the server into `dist/` |
-| `npm start` | Runs the production bundle |
+| `npm start` | Runs the production build |
 | `npm run lint` | Type-checks the whole project (`tsc --noEmit`) |
-| `npm run db:info` | Shows which database is in use and what is in it (stop the panel first) |
 | `npm run clean` | Removes build output |
 
 ---
 
 ## ⚙ Configuration
 
-All settings live in `.env` (see [`.env.example`](.env.example)). Most business settings (payments, plans, economy, branding) are changed from the admin console and stored in the database.
-
-<details open>
-<summary><b>Core</b></summary>
-
 | Variable | Required | Description |
 |---|:-:|---|
-| `DATABASE_URL` | ✅ | `postgres://user:pass@host:5432/db`. The panel refuses to start without it. |
-| `APP_URL` | ✅ prod | Public site URL. Used f
+| `JWT_SECRET` | ✅ | Secret used to sign login tokens. Use a long random value. |
+| `MONOPANEL_ADMIN_EMAIL` | ➖ | Email of the first super admin. Default `admin@monopanel.com`. |
+| `MONOPANEL_ADMIN_PASSWORD` | ➖ | Password of the first super admin. Default `MonoPanelOPP`, change it after first login. |
+| `APP_URL` | ✅ prod | Public URL of your site, used for OAuth callbacks. |
+| `ALLOWED_ORIGINS` | ✅ prod | Comma-separated list of allowed CORS origins. |
+| `MONOPANEL_INSTALLATION_ID` / `MONOPANEL_INSTALLATION_SECRET` | ➖ | Identity keys for this installation. |
+| `TRUST_PROXY` | ➖ | Set to `false` if you are **not** behind a reverse proxy. |
+| `VPN_CHECK_API_KEY` | ➖ | Key for the VPN/proxy detection provider. |
+| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` / `DISCORD_REDIRECT_URI` | ➖ | Enables Discord OAuth login. |
+| `DISCORD_BOT_TOKEN` | ➖ | Enables the Discord bot integration. |
+| `VITE_FIREBASE_*` | ➖ | Firebase web-app credentials for Google sign-in. |
+| `PORT` | ➖ | HTTP port (default `3000`). |
+| `DATABASE_URL` | ✅ | `postgres://user:pass@host:5432/db`. The panel will not start without it. |
+| `DATABASE_SSL` / `DATABASE_SSL_CA` | ➖ | `disable`, `require`, `verify` or `no-verify`, and an optional CA file. |
+| `DATABASE_POOL_MAX` / `DATABASE_TABLE_PREFIX` | ➖ | Pool size (default 5) and table prefix (default `mp_`). |
+| `NODE_ENV` | ➖ | `development` or `production`. |
+
+---
+
+## 🚀 Production deployment
+
+<details>
+<summary><b>Nginx reverse proxy</b></summary>
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    # ssl_certificate / ssl_certificate_key via certbot
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Caddy (automatic HTTPS)</b></summary>
+
+```caddy
+your-domain.com {
+    reverse_proxy 127.0.0.1:3000
+}
+```
+
+</details>
+
+<details>
+<summary><b>Keep it running with systemd</b></summary>
+
+```ini
+# /etc/systemd/system/monopanel.service
+[Unit]
+Description=MonoPanel
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/monopanel-panel
+ExecStart=/usr/bin/npm start
+Restart=always
+Environment=NODE_ENV=production
+User=monopanel
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now monopanel
+```
+
+</details>
+
+<details>
+<summary><b>Keep it running with PM2</b></summary>
+
+```bash
+npm i -g pm2
+npm run build
+pm2 start npm --name monopanel -- start
+pm2 save && pm2 startup
+```
+
+</details>
+
+---
+
+## 🛡 Security checklist
+
+- [ ] Set a long random `JWT_SECRET`
+- [ ] Change the default admin password (`MonoPanelOPP`) right after first login, or set your own `MONOPANEL_ADMIN_EMAIL` / `MONOPANEL_ADMIN_PASSWORD`
+- [ ] Serve over **HTTPS** and set `APP_URL` + `ALLOWED_ORIGINS` to your real domain
+- [ ] Set `TRUST_PROXY=false` if you are not behind a reverse proxy
+- [ ] Make sure `.env` and `data/` are **git-ignored** and never committed
+- [ ] Back up the database on a schedule (`pg_dump` / point-in-time recovery / your provider's snapshots)
+- [ ] Verify every manual payment before approving credits
+
+---
+
+## 🗄 Database & backups
+
+MonoPanel stores **everything** in PostgreSQL (12+). There is no embedded SQLite mode and no JSON database file.
+
+**Setup:** create an empty database and user, set `DATABASE_URL` in `.env`, start the panel. Tables (`mp_docs`, `mp_maps`, `mp_kv`, `mp_meta`) are created automatically.
+
+```sql
+CREATE USER monopanel WITH PASSWORD 'change-me';
+CREATE DATABASE monopanel OWNER monopanel;
+```
+
+| | |
+|---|---|
+| Backups | **Admin → Hosting → Database → Back up** runs `pg_dump` and saves a compressed `.sql.gz` in `data/backups/` (needs the `postgresql-client` package on the panel machine). For production also use WAL archiving / point-in-time recovery or your provider's snapshots. |
+| Restore | `gunzip -c data/backups/<file>.sql.gz \| psql "$DATABASE_URL"` with the panel stopped |
+
+**Rules:** only **one** panel process may use a database (it keeps its working set in memory), so a second instance is refused on purpose. With PgBouncer, connect the panel directly or use *session* pooling, because transaction pooling cannot hold that lock. Every save is a single transaction that writes only the changed rows; if the database is unreachable, writes retry every 5 seconds and nothing is lost while the panel stays up.
+
+**Tools** (stop the panel first):
+
+```bash
+npm run db:info    # which database is in use and what is in it
+```
+
+> [!CAUTION]
+> Never commit `.env` or any database dump.
+
+---
+
+## 🗂 Project structure
+
+```text
+MonoPanel/
+├── server.ts                # Express entry point (API + Vite middleware)
+├── server/
+│   ├── db.ts                # PostgreSQL-backed working set, defaults and migrations
+│   ├── auth.ts              # Auth middleware and role checks
+│   ├── discordService.ts    # Discord bot
+│   ├── webhookService.ts    # Outgoing webhooks
+│   └── routes/              # admin, auth, billing, mail, support, status, public, ...
+├── src/
+│   ├── App.tsx              # Page routing and layout
+│   ├── index.css            # Theme tokens: fonts and the black & white colour ramp
+│   ├── types.ts             # Shared TypeScript types
+│   ├── components/          # Navbar, Footer, Sidebar, logo, ...
+│   ├── lib/                 # Theme, branding and auth contexts, API helper
+│   └── pages/
+│       ├── public/          # Home, Bot Hosting, VPS Hosting, Pricing, Status, Docs
+│       ├── auth/            # Login, Register
+│       ├── customer/        # Dashboard, Billing, Checkout, Mail, Tickets, Settings
+│       └── admin/           # Every admin page
+├── public/                  # Logos and favicon
+└── data/                    # Runtime files (uploads, backups, generated key files), never committed. The database is PostgreSQL
+```
+
+### API surface
+
+Everything lives under **`/api/v1/`**:
+
+| Namespace | Purpose |
+|---|---|
+| `auth` | Sign-up, login, OAuth |
+| `billing` | Orders, credits, coupons |
+| `support` | Tickets |
+| `mail` | Inbox and broadcasts |
+| `admin` | Admin panel operations |
+| `public` | Public site data (plans, branding) |
+| `discord` | Discord linking and integration |
+| `status` | Incidents and maintenance |
+| `api-keys` | REST API keys |
+| `ads` | Ad campaigns |
+
+---
+
+## ❓ FAQ
+
+<details>
+<summary><b>Do I need to install a database?</b></summary>
+<br/>
+Yes. MonoPanel needs a PostgreSQL 12+ database (like Pterodactyl and Jexactyl need theirs). Create an empty database and user, then set <code>DATABASE_URL</code> in <code>.env</code>. The tables are created automatically on first start.
+</details>
+
+<details>
+<summary><b>Can customers pay by card?</b></summary>
+<br/>
+Not yet. The Stripe toggle is a placeholder and is blocked server-side. Payments are UPI, bank transfer, crypto or gift cards, verified by staff.
+</details>
+
+<details>
+<summary><b>How do servers and VPSes get created?</b></summary>
+<br/>
+By the MonoPanel daemon on each node. Add the node under <i>Admin → Nodes</i> (servers) or <i>Admin → VPS Nodes</i> (VPSes), then run the command the panel shows on the node. If you register the same address in both places, the panel uses one shared secret. Optional panel auto-provisioning (Pterodactyl / Pelican-compatible) is off by default and lives under <i>Advanced</i> in Panel Integration.
+</details>
+
+<details>
+<summary><b>How do I change the look?</b></summary>
+<br/>
+Use <b>Admin → Fonts & Themes</b> for themes and fonts, or edit the colour tokens in <code>src/index.css</code>.
+</details>
+
+---
+
+## 🤝 Contributing
+
+Contributions are very welcome. Read **[CONTRIBUTING.md](CONTRIBUTING.md)** for the fork-and-pull-request guide.
+
+```bash
+git checkout -b feature/my-change
+npm run lint          # must pass
+git commit -m "feat: describe your change"
+git push origin feature/my-change
+```
+
+---
+
+## 📜 License
+
+Released under the **MonoWeb Attribution License**. See [LICENSE](LICENSE).
+
+| | |
+|---|---|
+| ✅ **You can** | Use it, modify it, rebrand it, host it and sell services with it |
+| ⚠️ **You must** | Credit **Srccodeusr** for the source code and the overall website code |
+| ❌ **You can't** | Remove the credit, claim you wrote the original, or imply endorsement |
+
+**Required credit** for any repo or website built on MonoWeb:
+
+```text
+Built on MonoWeb by Srccodeusr
+https://github.com/Srccodeusr/MonoWeb
+```
+
+Running a site? Show **"Powered by MonoWeb by Srccodeusr"** (linked to the repo) in the footer or on a Credits page.
+
+> [!NOTE]
+> MonoWeb is built on the open-source **AetherPanel** project (MIT). The original MIT notice is preserved inside the license file and still applies to that code.
+
+<div align="center">
+
+<br/>
+
+<sub>◼ &nbsp; MonoPanel &nbsp; ◼</sub>
+
+</div>

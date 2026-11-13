@@ -3,6 +3,8 @@
  * Kept in its own file so src/types.ts only needs a few additive fields.
  */
 
+import type { HostingKind, ServerKind } from './hostingKinds';
+
 export type PeriodId = 'monthly' | 'halfyearly' | 'yearly' | string;
 
 export interface BillingPeriod {
@@ -61,6 +63,8 @@ export interface HostingPlan {
     methods: RenewMethod[];
   };
   highlights: string[];
+  /** Which kinds of server this plan can create. Empty / missing = every kind the host sells. */
+  kinds?: ServerKind[];
   createdAt: string;
   updatedAt: string;
 }
@@ -74,6 +78,10 @@ export interface HostNodeStatus {
   platform?: string;
   hostname?: string;
   error?: string;
+  /** Hosting kinds the daemon on this node reports it serves (NODE_SERVICES). Missing on daemons older than 4.1. */
+  services?: string[];
+  /** Website proxy state reported by the daemon. */
+  web?: { enabled: boolean; httpPort: number; httpsPort: number; domains: number; certs: number };
   system?: { cpus: number; load: number[]; memTotal: number; memFree: number; diskTotal: number; diskFree: number; uptime: number };
 }
 
@@ -99,6 +107,10 @@ export interface HostNode {
   isMaintenance: boolean;
   premiumOnly: boolean;
   notes?: string;
+  /** Kinds this node may host. Missing / empty = all kinds the host sells. */
+  services?: HostingKind[];
+  /** Public IPv4/IPv6 or host that website domains must point to (A/AAAA/CNAME). Defaults to the node address. */
+  webTarget?: string;
   status: HostNodeStatus;
   createdAt: string;
 }
@@ -111,6 +123,8 @@ export interface ImageVariable {
   userEditable: boolean;
   /** Simple validation: 'required', 'number', or a regex wrapped in /…/ */
   rules: string;
+  /** 'password': when the customer leaves the default in place, a random secret is generated for each new server. */
+  generate?: 'password';
 }
 
 export interface HostImage {
@@ -118,6 +132,8 @@ export interface HostImage {
   name: string;               // "Node.js"
   software: string;           // label in the Software dropdown
   category: string;           // "Coding Languages" | "Websites" | "Database" | "Games" | ...
+  /** Which hosting product this software belongs to. Missing = generic bot / app hosting. */
+  kind?: ServerKind;
   description: string;
   iconUrl?: string;
   dockerImages: Record<string, string>;   // label -> image
@@ -142,6 +158,10 @@ export interface HostServer {
   description: string;
   nodeId: string;
   imageId: string;
+  /** Hosting kind, copied from the software at creation. Missing on servers made before kinds existed (= bot). */
+  kind?: ServerKind;
+  /** Website servers: free subdomain label (under the host's base domain) and custom domains. */
+  site?: { subdomain: string; domains: SiteDomain[] };
   dockerImage: string;
   planId: string;              // plan at creation (limits snapshot below is what actually applies)
   entitlementId?: string;
@@ -166,6 +186,8 @@ export interface HostServer {
   /** Set while (or after a failed attempt at) moving the server to another node. */
   transfer?: { state: 'running' | 'failed'; fromNodeId: string; toNodeId: string; startedAt: string; step?: string; error?: string };
 }
+
+export interface SiteDomain { name: string; verified: boolean; addedAt: string; checkedAt?: string; error?: string }
 
 export interface ServerActivityEntry { id: string; at: string; userId: string; username: string; event: string; detail: string; ip?: string }
 export interface HostDatabase { id: string; name: string; username: string; passwordEnc: string; label: string; createdAt: string }

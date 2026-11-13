@@ -1,3 +1,4 @@
+import { HOSTING_KINDS } from '../../hostingKinds';
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Edit, Trash2, Check, X, RefreshCw, Layers, ShieldCheck, Server, Link2, FolderPlus } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
@@ -1065,9 +1066,11 @@ export const AdminProducts: React.FC = () => {
                   type="text"
                   value={categoryTag}
                   onChange={(e) => setCategoryTag(e.target.value)}
-                  placeholder="e.g. bot, vps"
+                  placeholder="bot, vps, website, nodejs, lavalink or custom" list="category-tags"
                   className="w-full rounded-xl bg-zinc-900 border border-zinc-800 p-2.5 text-xs text-white font-mono"
                 />
+                <datalist id="category-tags">{HOSTING_KINDS.map(k => <option key={k.id} value={k.category}>{k.label}</option>)}</datalist>
+                <p className="text-[10px] text-zinc-500 mt-1">Using a hosting type's tag (bot, vps, website, nodejs, lavalink) shows this category only while that type is enabled in Hosting Types.</p>
               </div>
             </div>
 

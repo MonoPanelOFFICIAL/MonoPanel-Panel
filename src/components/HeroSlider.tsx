@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { ArrowRight, Bot, Cpu, Database, Pause, Play, RotateCw, Server, Sparkles, Terminal } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Database, Globe, Hexagon, Music, Pause, Play, RotateCw, Server, Sparkles, Terminal } from 'lucide-react';
+import { HostingKind } from '../hostingKinds';
 import type { LucideIcon } from 'lucide-react';
 import { DiscordGlyph } from './DiscordGlyph';
 
@@ -16,8 +17,9 @@ import { DiscordGlyph } from './DiscordGlyph';
 const SLIDE_MS = 6500;
 
 interface HeroSliderProps {
-  botPrice: number;
-  vpsPrice: number;
+  /** Starting price per hosting type. Only the types in `enabled` get a slide, in this order. */
+  prices: Partial<Record<HostingKind, number>>;
+  enabled: HostingKind[];
   /** Auto-advance the slides. Turned off for reduced-motion users and when page animations are disabled. */
   autoplay: boolean;
   onNavigate: (page: string) => void;
@@ -63,6 +65,25 @@ const BotArt: React.FC = () => (
   </div>
 );
 
+/** Artwork for the hosting types without hand-made art: the bot scene with that type's icon in the middle. */
+const KindArt: React.FC<{ Icon: LucideIcon }> = ({ Icon }) => (
+  <div className="art art--bot">
+    <div className="art__glow" />
+    <div className="art__ring art__ring--1" />
+    <div className="art__ring art__ring--2" />
+    {DOTS.map((d, i) => (
+      <i key={i} className="art__dot" style={{ left: d.l, top: d.t, animationDelay: d.d }} />
+    ))}
+    <div className="art__stage">
+      <div className="tile tile--a"><Terminal /></div>
+      <div className="tile tile--b"><Cpu /></div>
+      <div className="tile tile--c"><RotateCw /></div>
+      <div className="tile tile--d"><Database /></div>
+      <div className="tile tile--main"><Icon /></div>
+    </div>
+  </div>
+);
+
 const VpsArt: React.FC = () => (
   <div className="art art--vps">
     <div className="art__glow" />
@@ -92,41 +113,41 @@ const VpsArt: React.FC = () => (
   </div>
 );
 
-export const HeroSlider: React.FC<HeroSliderProps> = ({ botPrice, vpsPrice, autoplay, onNavigate }) => {
+export const HeroSlider: React.FC<HeroSliderProps> = ({ prices, enabled, autoplay, onNavigate }) => {
   const [active, setActive] = useState(0);
   const [userPaused, setUserPaused] = useState(false);
   const [hoverPaused, setHoverPaused] = useState(false);
   const [focusPaused, setFocusPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
-  const slides: Slide[] = [
-    {
-      id: 'bot',
-      tabLabel: 'Discord Bot',
-      TabIcon: Bot,
-      tag: 'Node.js, Python, Bun & Go — always on.',
-      titleTop: 'Discord Bot',
-      titleBottom: 'Hosting',
+  const ALL: Record<HostingKind, Slide> = {
+    bot: {
+      id: 'bot', tabLabel: 'Discord Bot', TabIcon: Bot, tag: 'Node.js, Python, Bun & Go — always on.', titleTop: 'Discord Bot', titleBottom: 'Hosting',
       description: 'High-performance nodes with a 24/7 process watchdog, a secrets manager and setup support included.',
-      price: botPrice,
-      note: 'Auto-restart • Low latency',
-      page: 'bot',
-      art: <BotArt />
+      price: prices.bot ?? 0, note: 'Auto-restart • Low latency', page: 'bot', art: <BotArt />
     },
-    {
-      id: 'vps',
-      tabLabel: 'VPS',
-      TabIcon: Server,
-      tag: 'Full root access, any OS image.',
-      titleTop: 'VPS',
-      titleBottom: 'Hosting',
+    vps: {
+      id: 'vps', tabLabel: 'VPS', TabIcon: Server, tag: 'Full root access, any OS image.', titleTop: 'VPS', titleBottom: 'Hosting',
       description: 'Dedicated vCPU cores, a free database and subdomain, plus routine backups and uptime monitoring.',
-      price: vpsPrice,
-      note: 'Root access • NVMe storage',
-      page: 'vps',
-      art: <VpsArt />
+      price: prices.vps ?? 0, note: 'Root access • NVMe storage', page: 'vps', art: <VpsArt />
+    },
+    website: {
+      id: 'website', tabLabel: 'Website', TabIcon: Globe, tag: 'Front end and back end, one place.', titleTop: 'Website', titleBottom: 'Hosting',
+      description: 'Deploy Next.js, Express, Vite or static sites from Git with a free subdomain, custom domains and HTTPS.',
+      price: prices.website ?? 0, note: 'Git deploys • Custom domains', page: 'website', art: <KindArt Icon={Globe} />
+    },
+    nodejs: {
+      id: 'nodejs', tabLabel: 'Node.js', TabIcon: Hexagon, tag: 'Node 20, 22 and 24.', titleTop: 'Node.js', titleBottom: 'Hosting',
+      description: 'Run any API or worker with npm, pnpm or yarn tasks, a live console and one-click updates from Git.',
+      price: prices.nodejs ?? 0, note: 'Install & build tasks • Live console', page: 'nodejs', art: <KindArt Icon={Hexagon} />
+    },
+    lavalink: {
+      id: 'lavalink', tabLabel: 'Lavalink', TabIcon: Music, tag: 'Lavalink v4, ready in a minute.', titleTop: 'Lavalink', titleBottom: 'Hosting',
+      description: 'Low-latency audio nodes for music bots with a plugin manager, generated config and live player stats.',
+      price: prices.lavalink ?? 0, note: 'Plugins • Live stats', page: 'lavalink', art: <KindArt Icon={Music} />
     }
-  ];
+  };
+  const slides: Slide[] = (['bot', 'vps', 'website', 'nodejs', 'lavalink'] as HostingKind[]).filter(k => enabled.includes(k)).map(k => ALL[k]);
 
   const count = slides.length;
   const go = useCallback((i: number) => setActive(((i % count) + count) % count), [count]);
@@ -151,7 +172,7 @@ export const HeroSlider: React.FC<HeroSliderProps> = ({ botPrice, vpsPrice, auto
     <section
       className="hero"
       aria-roledescription="carousel"
-      aria-label="Discord Bot Hosting and VPS Hosting"
+      aria-label="Hosting plans"
       onPointerEnter={e => { if (e.pointerType === 'mouse') setHoverPaused(true); }}
       onPointerLeave={() => setHoverPaused(false)}
       onFocusCapture={e => { if ((e.target as HTMLElement).matches(':focus-visible')) setFocusPaused(true); }}

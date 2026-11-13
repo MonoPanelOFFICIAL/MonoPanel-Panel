@@ -1,4 +1,5 @@
 import { Addon, HostImage, HostNode, StoreItem } from '../../src/hostingTypes';
+import { HostingKind, isServerKind, normalizeHostings } from '../../src/hostingKinds';
 
 const s = (v: any, max: number, def = '') => (typeof v === 'string' ? v.trim().slice(0, max) : def);
 const n = (v: any, min: number, max: number, def: number) => { const x = Number(v); return Number.isFinite(x) ? Math.min(max, Math.max(min, x)) : def; };
@@ -6,6 +7,9 @@ const b = (v: any, def: boolean) => (typeof v === 'boolean' ? v : def);
 const safeUrl = (v: any) => { const t = s(v, 500); return /^(https?:\/\/|\/api\/v1\/media\/)/.test(t) ? t : ''; };
 
 const HOST_RE = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$|^[0-9a-fA-F:]+$/;
+
+/** Public address customers point website DNS at (defaults to the node address). */
+function webTarget(v: any): string { const t = s(v, 253).toLowerCase(); if (!t) return ''; if (!HOST_RE.test(t)) throw new Error('Invalid website DNS target.'); return t; }
 
 export function sanitizeNode(i: any, e?: HostNode): Omit<HostNode, 'id' | 'secretEnc' | 'status' | 'createdAt'> {
   const name = s(i?.name, 60, e?.name); if (!name) throw new Error('Node name is required.');
@@ -19,6 +23,9 @@ export function sanitizeNode(i: any, e?: HostNode): Omit<HostNode, 'id' | 'secre
     ramMB: Math.round(n(i?.ramMB, 0, 1e9, e?.ramMB ?? 4096)), cpuPercent: Math.round(n(i?.cpuPercent, 0, 1e6, e?.cpuPercent ?? 400)), diskMB: Math.round(n(i?.diskMB, 0, 1e9, e?.diskMB ?? 51200)),
     overallocatePercent: Math.round(n(i?.overallocatePercent, 0, 500, e?.overallocatePercent ?? 0)), maxServers: Math.round(n(i?.maxServers, 0, 100000, e?.maxServers ?? 0)),
     portMin, portMax, isPublic: b(i?.isPublic, e?.isPublic ?? true), isMaintenance: b(i?.isMaintenance, e?.isMaintenance ?? false), premiumOnly: b(i?.premiumOnly, e?.premiumOnly ?? false), notes: s(i?.notes, 500, e?.notes),
+    // Which hosting kinds this node accepts. Empty = all of them (and the daemon's own NODE_SERVICES still applies).
+    services: normalizeHostings(i?.services ?? e?.services ?? []) as HostingKind[],
+    webTarget: webTarget(i?.webTarget ?? e?.webTarget),
   };
 }
 
@@ -32,13 +39,13 @@ export function sanitizeImage(i: any, e?: HostImage): Omit<HostImage, 'id' | 'cr
   const labels = Object.keys(di); if (!labels.length) throw new Error('Add at least one valid Docker image (used by container nodes).');
   const defaultImage = labels.includes(i?.defaultImage) ? i.defaultImage : labels[0];
   const vars = (Array.isArray(i?.variables) ? i.variables : e?.variables || []).slice(0, 40).map((v: any) => ({
-    name: s(v?.name, 60, 'Variable'), env: s(v?.env, 64).toUpperCase().replace(/[^A-Z0-9_]/g, ''), default: s(v?.default, 500), description: s(v?.description, 200), userEditable: b(v?.userEditable, true), rules: s(v?.rules, 200, ''),
+    name: s(v?.name, 60, 'Variable'), env: s(v?.env, 64).toUpperCase().replace(/[^A-Z0-9_]/g, ''), default: s(v?.default, 500), description: s(v?.description, 200), userEditable: b(v?.userEditable, true), rules: s(v?.rules, 200, ''), ...(v?.generate === 'password' ? { generate: 'password' as const } : {}),
   })).filter((v: any) => /^[A-Z_][A-Z0-9_]*$/.test(v.env) && !['STARTUP', 'START', 'SERVER_PORT', 'SERVER_MEMORY', 'SERVER_IP', 'PATH', 'HOME'].includes(v.env));
   const ports = (Array.isArray(i?.ports) ? i.ports : e?.ports || [{ label: 'App', container: 3000, proto: 'tcp' }]).slice(0, 8)
     .map((p: any) => ({ label: s(p?.label, 40, 'Port'), container: Math.round(n(p?.container, 1, 65535, 3000)), proto: p?.proto === 'udp' ? 'udp' : 'tcp' }));
   const ins = i?.install || e?.install || {};
   return {
-    name, software: s(i?.software, 80, e?.software) || name, category: s(i?.category, 40, e?.category) || 'Other', description: s(i?.description, 300, e?.description), iconUrl: safeUrl(i?.iconUrl ?? e?.iconUrl),
+    name, kind: isServerKind(i?.kind) ? i.kind : (e?.kind ?? 'bot'), software: s(i?.software, 80, e?.software) || name, category: s(i?.category, 40, e?.category) || 'Other', description: s(i?.description, 300, e?.description), iconUrl: safeUrl(i?.iconUrl ?? e?.iconUrl),
     dockerImages: di, defaultImage, startup: s(i?.startup, 4000, e?.startup), stopCommand: s(i?.stopCommand, 100, e?.stopCommand ?? 'stop') || 'stop',
     ports: ports.length ? ports : [{ label: 'App', container: 3000, proto: 'tcp' }], variables: vars,
     install: {

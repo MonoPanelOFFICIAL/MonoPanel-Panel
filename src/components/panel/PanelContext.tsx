@@ -1,8 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../../lib/api';
+import type { ServerKind } from '../../hostingKinds';
 
 export interface PanelServer {
-  id: string; name: string; description: string; status: string; startedAt?: string; installLog?: string[];
+  id: string; kind: ServerKind; site?: { subdomain: string; domains: { name: string; verified: boolean; addedAt: string; checkedAt?: string; error?: string }[] };
+  name: string; description: string; status: string; startedAt?: string; installLog?: string[];
   image: { id: string; name: string; software: string; category: string; iconUrl?: string } | null;
   location: string; address: string; ports: { host: number; container: number; label?: string }[];
   limits: { ramMB: number; cpuPercent: number; diskMB: number; swapMB: number; backups: number; databases: number };

@@ -1,17 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { Server, Plus, Star, ShoppingBag, Coins, User as UserIcon, LogOut, CreditCard, LifeBuoy, Mail, Activity, MoreHorizontal, Info, CheckCircle2, Loader2, Package, Cloud } from 'lucide-react';
+import { Server, Globe, Hexagon, Music, Plus, Star, ShoppingBag, Coins, User as UserIcon, LogOut, CreditCard, LifeBuoy, Mail, Activity, MoreHorizontal, Info, CheckCircle2, Loader2, Package, Cloud } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { AdBanner } from '../AdBanner';
 import { PanelProvider, usePanel } from './PanelContext';
 import { cx } from '../ui/kit';
+import { useBranding } from '../../lib/BrandingContext';
+import { HOSTING_KINDS, HostingKind, SERVER_KIND_IDS } from '../../hostingKinds';
 
-interface Props { currentPage: string; onNavigate: (page: string, params?: any) => void; children: React.ReactNode }
+interface Props { currentPage: string; params?: Record<string, any>; onNavigate: (page: string, params?: any) => void; children: React.ReactNode }
 
-const TABS = [
-  { page: 'servers', label: 'Servers', icon: Server, match: ['servers', 'server', 'addons'] },
-  { page: 'server-create', label: 'Create', icon: Plus, match: ['server-create'] },
-  { page: 'vps-list', label: 'VPS', icon: Cloud, match: ['vps-list', 'vps-server', 'vps-deploy'] },
+interface Tab { page: string; label: string; icon: any; match: string[]; kind?: HostingKind; params?: Record<string, any> }
+const KIND_TAB_ICON: Record<HostingKind, any> = { bot: Server, vps: Cloud, website: Globe, nodejs: Hexagon, lavalink: Music };
+const KIND_TAB_LABEL: Record<HostingKind, string> = { bot: 'Servers', vps: 'VPS', website: 'Websites', nodejs: 'Node.js', lavalink: 'Lavalink' };
+
+/** One tab per hosting type the host sells (Admin > Hosting Types); types that are switched off have no tab, no page and no create button. */
+function buildTabs(enabled: HostingKind[]): Tab[] {
+  const kindTabs: Tab[] = HOSTING_KINDS.filter(k => enabled.includes(k.id)).map(k => ({
+    page: k.panelPage, label: KIND_TAB_LABEL[k.id], icon: KIND_TAB_ICON[k.id], kind: k.id,
+    match: k.id === 'bot' ? ['servers', 'addons'] : k.id === 'vps' ? ['vps-list', 'vps-server', 'vps-deploy'] : [k.panelPage],
+  }));
+  // With a single server type a separate "Create" tab is unambiguous; with several, each list page has its own "New" button.
+  const serverKinds = enabled.filter(k => (SERVER_KIND_IDS as string[]).includes(k));
+  const create: Tab[] = serverKinds.length === 1 ? [{ page: 'server-create', label: 'Create', icon: Plus, match: ['server-create'], params: { kind: serverKinds[0] } }] : [];
+  return [...kindTabs, ...create, ...STATIC_TABS];
+}
+const STATIC_TABS: Tab[] = [
   { page: 'upgrade', label: 'Upgrade', icon: Star, match: ['upgrade'] },
   { page: 'store', label: 'Store', icon: ShoppingBag, match: ['store'] },
   { page: 'earn', label: 'Earn', icon: Coins, match: ['earn'] },
@@ -71,11 +85,15 @@ const TopBar: React.FC<{ onNavigate: Props['onNavigate'] }> = () => {
   );
 };
 
-const Shell: React.FC<Props> = ({ currentPage, onNavigate, children }) => {
+const Shell: React.FC<Props> = ({ currentPage, params, onNavigate, children }) => {
   const { logout } = useAuth();
   const { data } = usePanel();
+  const { enabledHostings } = useBranding();
   const [more, setMore] = useState(false);
-  const active = (t: typeof TABS[number]) => t.match.includes(currentPage);
+  const TABS = React.useMemo(() => buildTabs(enabledHostings), [enabledHostings]);
+  // The server page and the create wizard belong to the hosting type of the server / of the wizard.
+  const pageKind: string | undefined = currentPage === 'server' ? data?.servers.find(s => s.id === params?.id)?.kind || 'bot' : currentPage === 'server-create' ? params?.kind || 'bot' : undefined;
+  const active = (t: Tab) => (pageKind ? t.kind === pageKind || (t.page === 'server-create' && currentPage === 'server-create') : t.match.includes(currentPage));
   const noAds = !!data?.plan.noAds;
 
   return (
@@ -88,7 +106,7 @@ const Shell: React.FC<Props> = ({ currentPage, onNavigate, children }) => {
           {TABS.map(t => {
             const Icon = t.icon; const on = active(t);
             return (
-              <button key={t.page} onClick={() => onNavigate(t.page)} aria-current={on ? 'page' : undefined}
+              <button key={t.page} onClick={() => onNavigate(t.page, t.params)} aria-current={on ? 'page' : undefined}
                 className={cx('flex-1 sm:flex-none min-w-[56px] sm:min-w-[84px] flex flex-col items-center gap-0.5 px-2 sm:px-3 py-2.5 text-[10px] font-semibold border-b-2 transition-colors', on ? 'border-amber-400 text-amber-300' : 'border-transparent text-zinc-500 hover:text-zinc-200')}>
                 <Icon className="h-[18px] w-[18px]" />{t.label}
               </button>

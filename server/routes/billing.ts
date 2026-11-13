@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { productVisible } from '../hosting/kinds';
 import { getDb, saveDbSync } from '../db';
 import { authMiddleware, createAuditLog, AuthenticatedRequest } from '../auth';
 import { createProvisionRecord, runProvisioning } from '../services/provisioningService';
@@ -247,6 +248,10 @@ router.post('/checkout', authMiddleware, async (req: AuthenticatedRequest, res: 
   const product = db.products.find(p => p.id === plan.productId);
   if (!product) {
     return res.status(404).json({ success: false, error: { code: 'PRODUCT_NOT_FOUND', message: 'That plan has no associated product.' } });
+  }
+  // A hosting type the host has switched off cannot be bought, even by calling the API directly.
+  if (!productVisible(db, product.category)) {
+    return res.status(404).json({ success: false, error: { code: 'PLAN_NOT_FOUND', message: 'That plan is not available.' } });
   }
 
   // --- Resolve/validate the customer's deployment choices against what this

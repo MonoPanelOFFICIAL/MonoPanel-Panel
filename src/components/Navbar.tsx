@@ -11,6 +11,8 @@ import { useAuth } from '../lib/AuthContext';
 import { useTheme } from '../lib/ThemeContext';
 import { apiRequest } from '../lib/api';
 import { MonoLogo } from './MonoLogo';
+import { useBranding } from '../lib/BrandingContext';
+import { HOSTING_KINDS } from '../hostingKinds';
 
 interface NavbarProps {
   currentPage: string;
@@ -25,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const { accentClasses } = useTheme();
+  const { enabledHostings } = useBranding();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [unreadMailCount, setUnreadMailCount] = useState(0);
 
@@ -107,20 +110,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             Home
           </button>
-          <button
-            type="button"
-            onClick={() => handleNav('bot')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 'bot' ? 'text-white bg-zinc-800/60' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}
-          >
-            Bot Hosting
-          </button>
-          <button
-            type="button"
-            onClick={() => handleNav('vps')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 'vps' ? 'text-white bg-zinc-800/60' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}
-          >
-            VPS Hosting
-          </button>
+          {HOSTING_KINDS.filter(k => enabledHostings.includes(k.id)).map(k => (
+            <button
+              key={k.id}
+              type="button"
+              onClick={() => handleNav(k.publicPage)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === k.publicPage ? 'text-white bg-zinc-800/60' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}
+            >
+              {k.label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={() => handleNav('pricing')}
@@ -528,20 +527,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                   >
                     Home
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNav('bot')}
-                    className={`px-3 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-left transition-colors ${currentPage === 'bot' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-300 hover:bg-zinc-900'}`}
-                  >
-                    Bot Hosting
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleNav('vps')}
-                    className={`px-3 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-left transition-colors ${currentPage === 'vps' ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-300 hover:bg-zinc-900'}`}
-                  >
-                    VPS Hosting
-                  </button>
+                  {HOSTING_KINDS.filter(k => enabledHostings.includes(k.id)).map(k => (
+                    <button
+                      key={k.id}
+                      type="button"
+                      onClick={() => handleNav(k.publicPage)}
+                      className={`px-3 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-left transition-colors ${currentPage === k.publicPage ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-300 hover:bg-zinc-900'}`}
+                    >
+                      {k.label}
+                    </button>
+                  ))}
                   <button
                     type="button"
                     onClick={() => handleNav('pricing')}

@@ -21,6 +21,7 @@ import { DOC_COLLECTIONS, MAP_COLLECTIONS } from './storage/layout';
 import { defaultAddons } from './hosting/seed';
 import { defaultPlans as defaultHostingPlans, defaultHostingSettings } from './hosting/plans';
 import { defaultImages, defaultStoreItems, upgradeLegacyNodeImage } from './hosting/seed';
+import { KIND_SEED_KEY, defaultKindImages, defaultKindPlans, defaultKindProducts } from './hosting/kindSeed';
 
 const DATA_DIR = path.join(process.cwd(), 'data');   // uploads and generated key files only: the database itself lives in PostgreSQL
 const BACKUP_DIR = path.join(DATA_DIR, 'backups');
@@ -518,6 +519,8 @@ export async function getDb(reload = false): Promise<DatabaseSchema> {
         dbCache = defaultDb();
       }
 
+      seedKindDefaults(dbCache);
+
       // Ensure a super admin account always exists
       const existingAdmin = dbCache.users.find(u => u.email.toLowerCase() === adminEmail.toLowerCase());
       if (!existingAdmin) {
@@ -557,6 +560,21 @@ export async function getDb(reload = false): Promise<DatabaseSchema> {
   })();
 
   return initPromise;
+}
+
+/**
+ * Adds the starter software / products / plans for Node.js, website and Lavalink hosting exactly once per database.
+ * Safe on every start: records are added by id only when missing, and the marker keeps deleted defaults deleted.
+ * Nothing here is visible to customers until the kind is enabled in Admin > Hosting Types.
+ */
+function seedKindDefaults(db: DatabaseSchema): void {
+  const seeded = Array.isArray(db.settings.seededDefaults) ? db.settings.seededDefaults : [];
+  if (seeded.includes(KIND_SEED_KEY)) return;
+  const addMissing = <T extends { id: string }>(list: T[], extra: T[]) => { for (const x of extra) if (!list.some(y => y.id === x.id)) list.push(x); };
+  addMissing(db.images, defaultKindImages(new Date().toISOString()));
+  addMissing(db.products, defaultKindProducts());
+  addMissing(db.plans, defaultKindPlans());
+  db.settings.seededDefaults = [...seeded, KIND_SEED_KEY];
 }
 
 /** Items must have a string id to live in a database row. Records without one get a generated id. */

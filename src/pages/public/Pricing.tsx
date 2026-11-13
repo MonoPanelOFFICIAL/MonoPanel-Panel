@@ -63,6 +63,9 @@ const ACCENTS = [
 function accentFor(product: PublicProduct, index: number): string {
   if (product.category === 'bot') return ACCENTS[0];
   if (product.category === 'vps') return ACCENTS[1];
+  if (product.category === 'website') return ACCENTS[2];
+  if (product.category === 'nodejs') return ACCENTS[3];
+  if (product.category === 'lavalink') return ACCENTS[4];
   return ACCENTS[2 + (index % (ACCENTS.length - 2))];
 }
 

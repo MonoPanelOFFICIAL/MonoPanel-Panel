@@ -6,6 +6,8 @@ import {
   Users, Megaphone, ShoppingBag, MessageSquare, Link2, Server
 } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
+import { useBranding } from '../lib/BrandingContext';
+import { HOSTING_KINDS } from '../hostingKinds';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ interface SearchItem {
 
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, onClose, onNavigate }) => {
   const { user } = useAuth();
+  const { enabledHostings } = useBranding();
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<SearchItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -43,24 +46,24 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
     const list: SearchItem[] = [
       {
         id: 'nav_dashboard',
-        title: 'My Servers',
+        title: enabledHostings.includes('bot') ? 'My Servers' : 'My Hosting',
         subtitle: 'View your credit balance, recent orders, and quick links',
         category: 'navigation',
         icon: User,
-        action: () => onNavigate('servers')
+        action: () => onNavigate(enabledHostings.includes('bot') ? 'servers' : (HOSTING_KINDS.find(k => enabledHostings.includes(k.id))?.panelPage || 'servers'))
       },
-      {
-        id: 'nav_vps',
-        title: 'My VPS',
-        subtitle: 'Manage your virtual private servers: power, terminal, files and SSH',
-        category: 'navigation',
+      ...HOSTING_KINDS.filter(k => k.id !== 'bot' && enabledHostings.includes(k.id)).map(k => ({
+        id: `nav_${k.id}`,
+        title: k.id === 'vps' ? 'My VPS' : `My ${k.short}`,
+        subtitle: k.tagline,
+        category: 'navigation' as const,
         icon: Server,
-        action: () => onNavigate('vps-list')
-      },
+        action: () => onNavigate(k.panelPage)
+      })),
       {
         id: 'nav_pricing',
         title: 'Pricing & Plans',
-        subtitle: 'Browse Bot & VPS hosting plans',
+        subtitle: 'Browse hosting plans',
         category: 'navigation',
         icon: Sparkles,
         action: () => onNavigate('pricing')
@@ -165,6 +168,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           icon: Megaphone,
           action: () => onNavigate('admin-announcements')
         },
+        ...(enabledHostings.includes('vps') ? [
         {
           id: 'admin_vps',
           title: 'Admin VPS Hosting',
@@ -180,6 +184,15 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           category: 'admin',
           icon: Server,
           action: () => onNavigate('admin-vps-servers')
+        }
+        ] as SearchItem[] : []),
+        {
+          id: 'admin_hosting_types',
+          title: 'Admin Hosting Types',
+          subtitle: 'Choose which kinds of hosting this site sells',
+          category: 'admin',
+          icon: Server,
+          action: () => onNavigate('admin-hosting-types')
         },
         {
           id: 'admin_discord',

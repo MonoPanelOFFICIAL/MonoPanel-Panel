@@ -3,6 +3,7 @@
  */
 
 import type { HostingSettings } from './hostingTypes';
+import type { HostingKind } from './hostingKinds';
 
 export type UserRole = 'user' | 'support' | 'moderator' | 'admin' | 'super_admin';
 
@@ -946,6 +947,14 @@ export interface SystemSettings {
   panelIntegration?: PanelIntegrationSettings;
   quickLinks?: QuickLink[];
   hosting?: HostingSettings;
+  /** Which kinds of hosting this host sells. Anything not listed is hidden everywhere. See src/hostingKinds.ts. */
+  enabledHostings?: HostingKind[];
+  /** False until an admin has saved the selection once (the admin dashboard nags until then). */
+  hostingsConfigured?: boolean;
+  /** Base domain for free website subdomains, e.g. "sites.example.com" (wildcard DNS must point at the nodes). */
+  websiteBaseDomain?: string;
+  /** Default records the migration already added, so a deleted default never comes back. */
+  seededDefaults?: string[];
 }
 
 // Admin-managed external links (e.g. "Discord Bot Panel", "VPS Panel", "Status Page").

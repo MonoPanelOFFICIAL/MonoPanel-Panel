@@ -25,6 +25,9 @@ export function parseUrlToRoute(pathname: string, search: string): RouteState {
   if (first === 'home') return { page: 'home', params: queryObj };
   if (first === 'vps') return { page: 'vps', params: queryObj };
   if (first === 'bot') return { page: 'bot', params: queryObj };
+  if (first === 'website' || first === 'websites' || first === 'website-hosting') return { page: 'website', params: queryObj };
+  if (first === 'nodejs' || first === 'node' || first === 'nodejs-hosting') return { page: 'nodejs', params: queryObj };
+  if (first === 'lavalink' || first === 'lavalink-hosting') return { page: 'lavalink', params: queryObj };
   if (first === 'pricing') return { page: 'pricing', params: queryObj };
   if (first === 'status') return { page: 'status', params: queryObj };
   if (first === 'docs') return { page: 'docs', params: queryObj };
@@ -53,6 +56,12 @@ export function parseUrlToRoute(pathname: string, search: string): RouteState {
     if (pathParts[1]) return { page: 'vps-server', params: { ...queryObj, id: pathParts[1] } };
     return { page: 'vps-list', params: queryObj };
   }
+  // Customer lists for the other hosting types. Each kind has its own section; the server page itself (/servers/:id) is shared.
+  if (first === 'my-websites' || first === 'my-nodejs' || first === 'my-lavalink') {
+    const page = first === 'my-websites' ? 'website-list' : first === 'my-nodejs' ? 'nodejs-list' : 'lavalink-list';
+    if (pathParts[1] === 'create' || pathParts[1] === 'new') return { page: 'server-create', params: { ...queryObj, kind: page.replace('-list', '') } };
+    return { page, params: queryObj };
+  }
   if (first === 'upgrade' || first === 'plans') return { page: 'upgrade', params: queryObj };
   if (first === 'store' || first === 'shop') return { page: 'store', params: queryObj };
   if (first === 'earn' || first === 'rewards') return { page: 'earn', params: queryObj };
@@ -73,6 +82,7 @@ export function parseUrlToRoute(pathname: string, search: string): RouteState {
       const map: Record<string, string> = { '': 'admin-vps', nodes: 'admin-vps-nodes', servers: 'admin-vps-servers', plans: 'admin-vps-plans', orders: 'admin-vps-orders', images: 'admin-vps-images', settings: 'admin-vps-settings', activity: 'admin-vps-activity' };
       return map[leaf] ? { page: map[leaf], params: queryObj } : { page: 'not-found', params: { ...queryObj, attemptedPath: pathname } };
     }
+    if (sub === 'hosting-types' || sub === 'services' || sub === 'hostings') return { page: 'admin-hosting-types', params: queryObj };
     if (sub === 'dashboard') return { page: 'admin-dashboard', params: queryObj };
     if (sub === 'users') return { page: 'admin-users', params: queryObj };
     if (sub === 'products' || sub === 'plans') return { page: 'admin-products', params: queryObj };
@@ -126,6 +136,9 @@ export function routeToUrl(page: string, params?: Record<string, any>): string {
     case 'home': return `/${formatQuery(params)}`;
     case 'vps': return `/vps${formatQuery(params)}`;
     case 'bot': return `/bot${formatQuery(params)}`;
+    case 'website': return `/website${formatQuery(params)}`;
+    case 'nodejs': return `/nodejs${formatQuery(params)}`;
+    case 'lavalink': return `/lavalink${formatQuery(params)}`;
     case 'pricing': return `/pricing${formatQuery(params)}`;
     case 'status': return `/status${formatQuery(params)}`;
     case 'docs': return `/docs${formatQuery(params)}`;
@@ -140,6 +153,9 @@ export function routeToUrl(page: string, params?: Record<string, any>): string {
     case 'servers': return `/servers${formatQuery(params)}`;
     case 'server': return `/servers/${encodeURIComponent(String(params?.id || ''))}${formatQuery(params, ['id'])}`;
     case 'server-create': return `/servers/create${formatQuery(params)}`;
+    case 'website-list': return `/my-websites${formatQuery(params)}`;
+    case 'nodejs-list': return `/my-nodejs${formatQuery(params)}`;
+    case 'lavalink-list': return `/my-lavalink${formatQuery(params)}`;
     case 'vps-list': return `/my-vps${formatQuery(params)}`;
     case 'vps-deploy': return `/my-vps/deploy${formatQuery(params)}`;
     case 'vps-server': return `/my-vps/${encodeURIComponent(String(params?.id || ''))}${formatQuery(params, ['id'])}`;
@@ -155,6 +171,7 @@ export function routeToUrl(page: string, params?: Record<string, any>): string {
     case 'settings': return `/settings${formatQuery(params)}`;
 
     case 'admin-dashboard': return `/admin${formatQuery(params)}`;
+    case 'admin-hosting-types': return `/admin/hosting-types${formatQuery(params)}`;
     case 'admin-users': return `/admin/users${formatQuery(params)}`;
     case 'admin-products': return `/admin/products${formatQuery(params)}`;
     case 'admin-billing': return `/admin/billing${formatQuery(params)}`;

@@ -69,6 +69,7 @@ export async function pingNode(node: HostNode): Promise<{ ping: any; system: any
 }
 
 /** The one-line command shown in Admin > Nodes after adding a node (same flow as the AirLink "Configure" button). */
-export function configureCommand(panelUrl: string, secret: string, port: number, panelIp?: string, sftpPort = 0): string {
-  return `cd daemon && npm install && npm run build && npm run configure -- --panel ${panelUrl} --key ${secret} --port ${port}${panelIp ? ` --allow ${panelIp}` : ''}${sftpPort ? ` --sftp ${sftpPort}` : ''} && npm start`;
+export function configureCommand(panelUrl: string, secret: string, port: number, panelIp?: string, sftpPort = 0, services: string[] = []): string {
+  // One daemon serves every hosting kind; --services only narrows what this node accepts (empty = all, which is what older installs do).
+  return `cd daemon && npm install && npm run build && npm run configure -- --panel ${panelUrl} --key ${secret} --port ${port}${panelIp ? ` --allow ${panelIp}` : ''}${sftpPort ? ` --sftp ${sftpPort}` : ''}${services.length ? ` --services ${services.join(',')}` : ''} && npm start`;
 }

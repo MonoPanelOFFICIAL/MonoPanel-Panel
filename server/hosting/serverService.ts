@@ -5,7 +5,9 @@ import { daemon, DaemonError, pingNode } from './daemonClient';
 import { effectivePlan } from './plans';
 import { resolveAccess, can } from './access';
 import { evaluateServer, extendFrom } from './lifecycle';
-import { newServerId } from './crypto';
+import { newServerId, randomPassword } from './crypto';
+import { ServerKind } from '../../src/hostingKinds';
+import { kindEnabled, imageKind, serverKind, planAppliesTo, nodeServes } from './kinds';
 
 export class HostingError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message); }
@@ -88,7 +90,8 @@ export function freePorts(db: DatabaseSchema, node: HostNode, count: number): nu
 }
 
 export function selectableNodes(db: DatabaseSchema, image: HostImage, plan: HostingPlan) {
-  return db.nodes.filter(n => n.isPublic && !n.isMaintenance && n.status?.online
+  const kind = imageKind(image);
+  return db.nodes.filter(n => n.isPublic && !n.isMaintenance && n.status?.online && nodeServes(n, kind)
     && (!n.premiumOnly || !plan.isFree)
     && (image.runtime !== 'container' || n.status.runtime !== 'process')
     && (image.runtime !== 'process' || n.status.runtime === 'process'));
@@ -110,6 +113,7 @@ function validateVars(image: HostImage, input: Record<string, unknown> | undefin
   for (const v of image.variables) {
     let val = v.default;
     if (input && input[v.env] !== undefined && (v.userEditable || allowAll)) val = String(input[v.env]);
+    if (v.generate === 'password' && !val) val = randomPassword(24);
     if (val.length > 500 || /[\0\r\n]/.test(val)) fail(400, 'INVALID_VARIABLE', `${v.name}: invalid value.`);
     if (v.rules === 'required' && !val) fail(400, 'INVALID_VARIABLE', `${v.name} is required.`);
     else if (v.rules === 'number' && val !== '' && !/^-?\d+(\.\d+)?$/.test(val)) fail(400, 'INVALID_VARIABLE', `${v.name} must be a number.`);
@@ -152,11 +156,31 @@ export function sftpLogins(db: DatabaseSchema, s: HostServer): { username: strin
   return out;
 }
 
+/** Every hostname that should reach a website server right now. */
+export function siteHosts(s: Pick<HostServer, 'site'>): string[] {
+  const out: string[] = [];
+  if (s.site?.subdomain) out.push(s.site.subdomain);
+  for (const d of s.site?.domains || []) if (d.verified) out.push(d.name);
+  return out;
+}
+
+/** Free subdomain for a new website: "<name>-<id>.<base domain>". Empty when the host has not set a base domain. */
+export function newSubdomain(db: DatabaseSchema, name: string, id: string): string {
+  const base = (db.settings.websiteBaseDomain || '').trim().toLowerCase().replace(/^\*?\./, '');
+  if (!base) return '';
+  const label = (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'site');
+  return `${label}-${id.replace(/-/g, '').slice(0, 6)}.${base}`;
+}
+
 export function specFor(db: DatabaseSchema, s: HostServer) {
   const image = db.images.find(i => i.id === s.imageId);
   const l = liveLimits(s);
   const env = { ...s.variables, SERVER_MEMORY: String(l.ramMB), SERVER_IP: '0.0.0.0', SERVER_PORT: String(s.ports[0]?.container ?? s.ports[0]?.host ?? '') };
+  const kind = serverKind(db, s);
   return {
+    kind,
+    // Website servers: the free subdomain plus every custom domain that passed verification. The daemon's reverse proxy routes by Host header.
+    ...(kind === 'website' ? { domains: siteHosts(s) } : {}),
     image: s.dockerImage, startup: renderStartup(image?.startup || '', env), stopCommand: image?.stopCommand || 'stop', env,
     ports: s.ports.map(p => ({ host: p.host, container: p.container, proto: p.proto })),
     limits: { ramMB: l.ramMB, cpuPercent: l.cpuPercent, diskMB: l.diskMB, swapMB: l.swapMB, pids: l.pids },
@@ -188,6 +212,10 @@ export async function createServer(user: User, input: CreateInput): Promise<Host
   const image = db.images.find(i => i.id === input.imageId && i.isActive);
   if (!image) fail(404, 'IMAGE_NOT_FOUND', 'That software is not available.');
   const img = image!;
+  const kind: ServerKind = imageKind(img);
+  // The host only sells what is switched on in Admin > Hosting Types. The browser hides the rest; this is the real check.
+  if (!kindEnabled(db, kind)) fail(403, 'HOSTING_DISABLED', 'This hosting service is not available.');
+  if (!planAppliesTo(caps.plan, kind) && !input.entitlementId) fail(403, 'PLAN_KIND', `Your ${caps.plan.name} plan does not include this type of hosting.`);
 
   let ent: Entitlement | undefined;
   let limits: HostServer['limits'];
@@ -239,11 +267,13 @@ export async function createServer(user: User, input: CreateInput): Promise<Host
   else if (!caps.plan.isFree && user.tempPlan) expiresAt = user.tempPlan.until;
   else expiresAt = new Date(now + hs.expiry.defaultValidityDays * 86400_000).toISOString();
 
+  const id = newServerId();
   const server: HostServer = {
-    id: newServerId(), ownerId: user.id, name, description, nodeId: n.id, imageId: img.id,
+    id, kind, ownerId: user.id, name, description, nodeId: n.id, imageId: img.id,
     dockerImage: img.dockerImages[label], planId: caps.plan.id, entitlementId: ent?.id, limits, ports, variables,
     upgrades: [], status: 'installing', createdAt: new Date(now).toISOString(), expiresAt, renewCount: 0,
   };
+  if (kind === 'website') server.site = { subdomain: newSubdomain(db, name, id), domains: [] };
 
   try {
     await pushSpec({ ...db, servers: [...db.servers, server] } as DatabaseSchema, server);
@@ -375,7 +405,7 @@ export async function refreshNodeStatuses(): Promise<void> {
   await Promise.allSettled(db.nodes.map(async n => {
     try {
       const { ping, system } = await pingNode(n);
-      n.status = { online: true, checkedAt: new Date().toISOString(), version: ping.version, runtime: ping.runtime, runtimeInfo: ping.runtimeInfo, platform: ping.platform, hostname: ping.hostname, system };
+      n.status = { online: true, checkedAt: new Date().toISOString(), version: ping.version, runtime: ping.runtime, runtimeInfo: ping.runtimeInfo, platform: ping.platform, hostname: ping.hostname, system, services: Array.isArray(ping.services) ? ping.services : undefined, web: ping.web };
     } catch (e: any) {
       n.status = { ...n.status, online: false, checkedAt: new Date().toISOString(), error: e?.message || 'unreachable' };
     }

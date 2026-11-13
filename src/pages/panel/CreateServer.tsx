@@ -4,17 +4,21 @@ import { apiRequest } from '../../lib/api';
 import { usePanel } from '../../components/panel/PanelContext';
 import { AdBanner } from '../../components/AdBanner';
 import { Btn, Card, Field, Select, Spinner, TextArea, TextInput, cx, fmtMB, useToast } from '../../components/ui/kit';
+import { ServerKind, kindInfo } from '../../hostingKinds';
 
 interface Catalog {
   plan: { name: string; isFree: boolean; serverLimit: number; used: number; perServer: { ramMB: number; cpuPercent: number; diskMB: number }; chooseNode: boolean };
   locations: { name: string; flag: string; nodes: number }[];
   nodes: { id: string; name: string; location: string; runtime?: string }[];
-  images: { id: string; name: string; software: string; category: string; description: string; minRamMB: number; runtime: string; versions: string[]; defaultVersion: string; variables: { name: string; env: string; default: string; description: string }[] }[];
+  images: { id: string; kind?: ServerKind; name: string; software: string; category: string; description: string; minRamMB: number; runtime: string; versions: string[]; defaultVersion: string; variables: { name: string; env: string; default: string; description: string }[] }[];
   packs: { id: string; name: string; pack: { ramMB: number; cpuPercent: number; diskMB: number; validityDays: number } }[];
   maxNameLength: number;
 }
 
-export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => void }> = ({ onNavigate }) => {
+export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => void; kind?: ServerKind }> = ({ onNavigate, kind = 'bot' }) => {
+  const info = kindInfo(kind)!;
+  const main = kind === 'bot';
+  const noun = main ? 'server' : kind === 'website' ? 'website' : kind === 'lavalink' ? 'node' : 'app';
   const { refresh } = usePanel();
   const [toast, say] = useToast();
   const [cat, setCat] = useState<Catalog | null>(null);
@@ -37,8 +41,18 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
     });
   }, []);
 
-  const categories = useMemo(() => [...new Set((cat?.images || []).map(i => i.category))], [cat]);
-  const softwareList = useMemo(() => (cat?.images || []).filter(i => i.category === category), [cat, category]);
+  // Only software that belongs to this hosting type. A Lavalink wizard never lists bot software and the other way round.
+  const kindImages = useMemo(() => (cat?.images || []).filter(i => (i.kind || 'bot') === kind), [cat, kind]);
+  const categories = useMemo(() => [...new Set(kindImages.map(i => i.category))], [kindImages]);
+  const softwareList = useMemo(() => kindImages.filter(i => i.category === category), [kindImages, category]);
+  // Types with a single category (and a single software) need no choosing: preselect them.
+  useEffect(() => {
+    if (!main && categories.length === 1 && category !== categories[0]) setCategory(categories[0]);
+  }, [main, categories, category]);
+  useEffect(() => {
+    if (!main && category && softwareList.length === 1 && !imageId) pickImageRef.current(softwareList[0].id);
+  }, [main, category, softwareList, imageId]);
+  const pickImageRef = React.useRef<(id: string) => void>(() => undefined);
   const image = cat?.images.find(i => i.id === imageId);
   const pack = cat?.packs.find(p => p.id === packId);
 
@@ -53,6 +67,7 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
     setImageId(id); const img = cat.images.find(i => i.id === id);
     setVersion(img?.defaultVersion || ''); setVars(Object.fromEntries((img?.variables || []).map(v => [v.env, v.default])));
   };
+  pickImageRef.current = pickImage;
 
   const deploy = async () => {
     setBusy(true);
@@ -73,7 +88,7 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
         {/* Left: steps + plan specs (same structure as the reference wizard) */}
         <Card className="space-y-5">
           <div>
-            <h2 className="text-sm font-bold text-white">Server Creation</h2>
+            <h2 className="text-sm font-bold text-white">{main ? 'Server Creation' : `New ${info.label.replace(' Hosting', '')} ${noun}`}</h2>
             <p className="text-[11px] text-zinc-500 mt-0.5">Configure your new instance</p>
             <div className="mt-3 space-y-1.5">
               {[{ i: FileText, t: 'Basic Details' }, { i: Settings2, t: 'Deployment' }].map((s, idx) => {
@@ -107,8 +122,8 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
 
           {step === 0 && (
             <Card className="space-y-5">
-              <h2 className="text-base font-bold text-white">Server Details</h2>
-              <Field label="Server name" hint="A friendly identifier." right={<span>{name.length}/{cat.maxNameLength}</span>}>
+              <h2 className="text-base font-bold text-white">{main ? 'Server Details' : `${noun[0].toUpperCase()}${noun.slice(1)} details`}</h2>
+              <Field label={main ? 'Server name' : 'Name'} hint="A friendly identifier." right={<span>{name.length}/{cat.maxNameLength}</span>}>
                 <TextInput value={name} maxLength={cat.maxNameLength} onChange={e => setName(e.target.value)} placeholder="My awesome server" autoFocus />
               </Field>
               <Field label="Description (optional)" hint="Displayed on your server list." right={<span>{description.length}/191</span>}>
@@ -131,19 +146,25 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
                 <Field label="Location">
                   <Select value={location} onChange={e => { setLocation(e.target.value); setNodeId(''); }}><option value="">Select a Location…</option>{cat.locations.map(l => <option key={l.name} value={l.name}>{l.flag} {l.name}</option>)}</Select>
                 </Field>
-                <Field label="Category">
+                {(main || categories.length > 1) && <Field label="Category">
                   <Select value={category} onChange={e => { setCategory(e.target.value); setImageId(''); }}><option value="">Select Category…</option>{categories.map(c => <option key={c}>{c}</option>)}</Select>
-                </Field>
-                <Field label="Software (Egg)">
+                </Field>}
+                {(main || softwareList.length > 1) && <Field label="Software (Egg)">
                   <Select value={imageId} onChange={e => pickImage(e.target.value)} disabled={!category}><option value="">Select Software…</option>{softwareList.map(i => <option key={i.id} value={i.id}>{i.software}</option>)}</Select>
-                </Field>
+                </Field>}
               </div>
 
               {image && (
                 <div className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
                   <p className="text-xs text-zinc-400">{image.description}</p>
                   {image.versions.length > 1 && <Field label="Version"><Select value={version} onChange={e => setVersion(e.target.value)}>{image.versions.map(v => <option key={v}>{v}</option>)}</Select></Field>}
-                  <p className="text-[11px] text-zinc-500">Main file, Git repository and other launch options are set later in the server’s <b className="text-zinc-300">Startup</b> tab.</p>
+                  {main && <p className="text-[11px] text-zinc-500">Main file, Git repository and other launch options are set later in the server’s <b className="text-zinc-300">Startup</b> tab.</p>}
+                  {!main && image.variables.filter(v => v.env !== 'ACCESS_TOKEN' && v.env !== 'USERNAME').map(v => (
+                    <Field key={v.env} label={v.name} hint={v.description}>
+                      <TextInput value={vars[v.env] ?? ''} onChange={e => setVars(x => ({ ...x, [v.env]: e.target.value }))} placeholder={v.env === 'LAVALINK_PASSWORD' ? 'Leave empty to generate a strong one' : v.default || ''} autoComplete="off" />
+                    </Field>
+                  ))}
+                  {!main && <p className="text-[11px] text-zinc-500">You can change these later in the {noun}'s <b className="text-zinc-300">Startup</b> tab.</p>}
                   {lowRam && <p className="text-xs text-red-300">{image.name} needs at least {fmtMB(image.minRamMB)} RAM. Your {pack ? 'pack' : 'plan'} provides {fmtMB(specs.ram)}.</p>}
                 </div>
               )}
@@ -157,7 +178,7 @@ export const CreateServer: React.FC<{ onNavigate: (p: string, params?: any) => v
 
               <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
                 <Btn variant="dark" onClick={() => setStep(0)}><ArrowLeft className="h-3.5 w-3.5" />Back</Btn>
-                <Btn variant="primary" disabled={!deployOk} busy={busy} onClick={deploy}>{busy ? 'Deploying…' : <><Rocket className="h-3.5 w-3.5" />Deploy Server</>}</Btn>
+                <Btn variant="primary" disabled={!deployOk} busy={busy} onClick={deploy}>{busy ? 'Deploying…' : <><Rocket className="h-3.5 w-3.5" />Deploy {main ? 'Server' : noun[0].toUpperCase() + noun.slice(1)}</>}</Btn>
               </div>
             </Card>
           )}

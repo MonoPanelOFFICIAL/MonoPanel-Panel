@@ -1,193 +1,103 @@
-MonoPanel Open License (MPOL) - Version 1.0
+MonoWeb Attribution License
+Copyright (c) 2026 Srccodeusr. All rights reserved except as granted below.
 
-Copyright (c) 2026 Srccodeusr and the MonoPanel contributors.
-Project home: https://github.com/TeamMonoPanel/MonoPanel-Panel
+────────────────────────────────────────────────────────────────────────
+1. PERMISSION
+────────────────────────────────────────────────────────────────────────
 
-This license applies to the MonoPanel Panel source code, documentation and
-assets in this repository (the "Software"), except for the third-party code
-listed in Section 9, which stays under its own license.
+Permission is granted, free of charge, to any person obtaining a copy of
+this software and its associated files (the "Software") to:
 
-In short (this summary is a convenience, the numbered sections below are the
-actual license):
+  a) use the Software, including for commercial purposes;
+  b) modify the Software;
+  c) rebrand the Software, including its name, logo, colours, fonts,
+     text and design;
+  d) host it and run it as a website or service; and
+  e) distribute copies of the Software, modified or unmodified.
 
-  You may   use it, change it, rebrand it, host it, sell services with it and
-            redistribute it, for free, including commercially.
-  You must  keep the license and copyright notice, and give MonoPanel credit
-            (Section 3).
-  You may not  hide the credit, claim you wrote the original, or imply that
-            the authors endorse you.
+────────────────────────────────────────────────────────────────────────
+2. CONDITION: CREDIT IS REQUIRED
+────────────────────────────────────────────────────────────────────────
 
-========================================================================
-1. DEFINITIONS
-========================================================================
+Every use of the Software, including rebranded or modified versions,
+must give visible credit to the original author for the source code and
+for the overall code of the website:
 
-"You" means the person or organization using the Software.
+  a) Keep this license file, unmodified, in every copy or distribution
+     of the source code.
 
-"Derivative" means any modification, fork, rebrand, translation or work that
-contains a substantial part of the Software.
+  b) Keep the following credit in the README of any public repository
+     containing the Software or a derivative of it:
 
-"Service" means any website, panel, API or hosted product that runs the
-Software or a Derivative and is made available to other people.
+         Built on MonoWeb by Srccodeusr
+         https://github.com/Srccodeusr/MonoWeb
 
-"Distribute" means to give or sell a copy of the Software or a Derivative to
-anyone else, in source or built form.
+  c) For any website or service running the Software, display the credit
+     "Powered by MonoWeb by Srccodeusr" (linking to the repository URL
+     above) in a place visitors can reasonably find, such as the site
+     footer or an About / Credits page.
 
-========================================================================
-2. GRANT OF RIGHTS
-========================================================================
+Rebranding the Software does not remove this obligation. You may change
+everything a visitor sees, but the credit above must remain.
 
-Subject to the conditions in this license, each copyright holder grants You a
-worldwide, royalty-free, non-exclusive, irrevocable (except as stated in
-Section 7) license to:
+────────────────────────────────────────────────────────────────────────
+3. WHAT YOU MAY NOT DO
+────────────────────────────────────────────────────────────────────────
 
-  a) use and run the Software for any purpose, including commercial use;
-  b) copy, modify, merge and create Derivatives of the Software;
-  c) rebrand the Software, including its name, logo, colours, fonts, text and
-     design;
-  d) run the Software as a Service, including a paid Service;
-  e) Distribute the Software and Derivatives, in source or built form, and
-     under terms of Your choice for Your own additions, as long as this
-     license keeps applying to the Software parts.
+  a) Remove or hide the credit required by Section 2.
+  b) Claim that you wrote the original source code.
+  c) Suggest that the original author endorses your website, service or
+     modified version.
 
-Each contributor also grants You a worldwide, royalty-free, non-exclusive
-license under the patent claims they own that are necessarily infringed by
-their contribution on its own or combined with the Software, to make, use,
-sell and import the Software. If You start a patent lawsuit claiming that the
-Software infringes a patent, the patent license granted to You ends on the day
-You file it.
+────────────────────────────────────────────────────────────────────────
+4. THIRD-PARTY CODE (AETHERPANEL, MIT LICENSE)
+────────────────────────────────────────────────────────────────────────
 
-========================================================================
-3. CONDITIONS: KEEP THE NOTICE AND GIVE CREDIT
-========================================================================
+Parts of this Software are derived from the open-source AetherPanel
+project, which is released under the MIT License. The grant in Section 1
+and the conditions above apply to the modifications and additions made
+in MonoWeb. They do not replace, reduce or remove the original MIT
+License, which continues to apply to the AetherPanel code and whose
+copyright and permission notice must be kept, as reproduced below.
 
-Every copy and every Derivative must meet all of the following.
-
-a) Keep the license.
-   Include this license file and the copyright notice, unmodified, in every
-   copy or Distribution of the source code.
-
-b) Credit in the repository.
-   If You publish a repository containing the Software or a Derivative, keep
-   this line in its README:
-
-       Built on MonoPanel by Srccodeusr
-       https://github.com/TeamMonoPanel/MonoPanel-Panel
-
-c) Credit on the Service.
-   If You run a Service, show the text "Powered by MonoPanel" with a link to
-   the project home above, somewhere visitors can reasonably find it, such as
-   the site footer or an About or Credits page. Admin-only pages do not count.
-
-d) Mark Your changes.
-   If You change the Software, make it clear that it is a modified version.
-   A line in the README such as "Modified from MonoPanel" is enough.
-
-Rebranding does not remove these conditions. You may change everything a
-visitor sees, but the credit must remain.
-
-========================================================================
-4. WHAT YOU MAY NOT DO
-========================================================================
-
-  a) Remove, hide or shrink the credit required by Section 3 so that it can
-     no longer be reasonably found.
-  b) Claim that You wrote the original Software, or remove the original
-     copyright notices from the source code.
-  c) Suggest that the authors or contributors endorse, sponsor or are
-     affiliated with You, Your Derivative or Your Service.
-  d) Use the "MonoPanel" name or logo as the name of Your own Service or
-     product, unless Your Service is the unmodified official project. You may
-     use the name only to state where Your Derivative comes from, for example
-     "based on MonoPanel".
-
-This license does not grant any trademark rights beyond what Sections 3 and
-4(d) describe.
-
-========================================================================
-5. CONTRIBUTIONS
-========================================================================
-
-Unless You state otherwise in writing, any contribution that You deliberately
-submit for inclusion in the Software (for example a pull request) is licensed
-under this license, with no additional terms. You confirm that You have the
-right to submit it.
-
-========================================================================
-6. SECRETS, DATA AND YOUR OWN DEPLOYMENT
-========================================================================
-
-You are responsible for the Service You run: its configuration, secrets,
-backups, payments, customer data, legal pages and compliance with the laws
-that apply to You. The default admin account created on first start uses a
-public password; changing it is Your responsibility. Nothing in this license
-makes the authors a party to Your agreements with Your customers.
-
-========================================================================
-7. TERMINATION
-========================================================================
-
-If You break Section 3 or Section 4, Your rights under Section 2 end
-automatically. They come back if You fix the breach within 30 days after
-You become aware of it (or after a written notice from a copyright holder,
-whichever is first). If You break these sections again after that, the rights
-end permanently for that breach unless a copyright holder agrees otherwise.
-
-People who received the Software from You keep their own license as long as
-they follow this license themselves.
-
-========================================================================
-8. NO WARRANTY AND LIMITATION OF LIABILITY
-========================================================================
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-
-IN NO EVENT SHALL THE AUTHORS, COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
-THE USE OR OTHER DEALINGS IN THE SOFTWARE, INCLUDING LOSS OF DATA, LOSS OF
-REVENUE, SERVICE DOWNTIME OR SECURITY INCIDENTS ON A SERVICE YOU OPERATE.
-
-========================================================================
-9. THIRD-PARTY CODE
-========================================================================
-
-Parts of this Software are derived from the open-source AetherPanel project,
-which is released under the MIT License. This license covers the changes and
-additions made in MonoPanel. It does not replace, reduce or remove the
-original MIT License, which keeps applying to the AetherPanel code. Its
-copyright and permission notice must be kept in every copy, as reproduced
-below.
+  [PASTE THE ORIGINAL AETHERPANEL COPYRIGHT LINE HERE, exactly as it
+   appears in the previous LICENSE file]
 
   Permission is hereby granted, free of charge, to any person obtaining a
-  copy of this software and associated documentation files (the "Software"),
-  to deal in the Software without restriction, including without limitation
-  the rights to use, copy, modify, merge, publish, distribute, sublicense,
-  and/or sell copies of the Software, and to permit persons to whom the
-  Software is furnished to do so, subject to the following conditions:
+  copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
 
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
+  The above copyright notice and this permission notice shall be included
+  in all copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-  IN THE SOFTWARE.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Other dependencies (React, Express, discord.js, Vite, Tailwind CSS and the
-rest of the packages listed in package.json) are installed from npm and keep
-their own licenses.
+────────────────────────────────────────────────────────────────────────
+5. TERMINATION
+────────────────────────────────────────────────────────────────────────
 
-========================================================================
-10. GENERAL
-========================================================================
+If you break the conditions in Sections 2 or 3, your permission under
+Section 1 ends. It is restored if you fix the breach within 30 days of
+becoming aware of it.
 
-If any part of this license is held unenforceable, the rest stays in effect.
-This license is the whole agreement about the Software between You and the
-copyright holders. A copyright holder may publish new versions of this
-license; the version that came with the copy You received keeps applying to
-that copy.
+────────────────────────────────────────────────────────────────────────
+6. NO WARRANTY
+────────────────────────────────────────────────────────────────────────
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { getDb } from '../db';
 import { Product } from '../../src/types';
+import { enabledKinds, productVisible } from '../hosting/kinds';
+import { HOSTING_KINDS } from '../../src/hostingKinds';
 
 const router = Router();
 
@@ -21,7 +23,7 @@ function toPublicProduct(product: Product) {
 router.get('/products', async (req: Request, res: Response) => {
   const db = await getDb();
   const data = db.products
-    .filter(p => p.isActive)
+    .filter(p => p.isActive && productVisible(db, p.category))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(toPublicProduct);
   res.json({ success: true, data });
@@ -32,7 +34,7 @@ router.get('/plans', async (req: Request, res: Response) => {
   const db = await getDb();
   // A plan is only public when its category still exists AND is active. Without
   // this, plans left behind by a deleted / hidden category kept showing up.
-  const liveProductIds = new Set(db.products.filter(prod => prod.isActive).map(prod => prod.id));
+  const liveProductIds = new Set(db.products.filter(prod => prod.isActive && productVisible(db, prod.category)).map(prod => prod.id));
   let plans = db.plans.filter(p => p.isActive && liveProductIds.has(p.productId));
   const category = req.query.category as string;
   if (category) {
@@ -60,14 +62,19 @@ router.get('/settings', async (req: Request, res: Response) => {
     pageAnimationsEnabled, socialLinks, heroDescription, footerDescription, quickLinks
   } = db.settings;
 
-  const DEFAULT_HERO = 'Deploy 24/7 Discord bots and high-performance VPS instances in minutes. Reliable infrastructure, transparent pricing, and real support when you need it.';
-  const DEFAULT_FOOTER = 'Bot Hosting & VPS Hosting plans built on the same reliable, high-performance network.';
+  const enabled = enabledKinds(db);
+  const names = enabled.map(k => HOSTING_KINDS.find(x => x.id === k)!.label);
+  const list = names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+  const DEFAULT_HERO = `Launch ${list} in minutes. Reliable infrastructure, transparent pricing, and real support when you need it.`;
+  // The stock tagline names the original two products; once the host changes what it sells it must follow, a customised one is left alone.
+  const LEGACY_TAGLINE = 'Bot Hosting & VPS Hosting on Reliable Infrastructure';
+  const DEFAULT_FOOTER = `${list} plans built on the same reliable, high-performance network.`;
 
   res.json({
     success: true,
     data: {
       brandName,
-      brandTagline,
+      brandTagline: brandTagline === LEGACY_TAGLINE ? `${list} on Reliable Infrastructure` : brandTagline,
       supportEmail,
       discordUrl,
       socialLinks: socialLinks || { discord: discordUrl || '', twitter: '', github: '' },
@@ -81,7 +88,11 @@ router.get('/settings', async (req: Request, res: Response) => {
       pageAnimationsEnabled: pageAnimationsEnabled !== false,
       heroDescription: (typeof heroDescription === 'string' && heroDescription.trim().length > 0) ? heroDescription : DEFAULT_HERO,
       footerDescription: (typeof footerDescription === 'string' && footerDescription.trim().length > 0) ? footerDescription : DEFAULT_FOOTER,
-      quickLinks: (Array.isArray(quickLinks) ? quickLinks : []).filter((l: any) => l && l.url)
+      quickLinks: (Array.isArray(quickLinks) ? quickLinks : []).filter((l: any) => l && l.url),
+      // What this host sells. The website, menus and pages show nothing outside this list.
+      enabledHostings: enabled,
+      hostingsConfigured: !!db.settings.hostingsConfigured,
+      websiteBaseDomain: db.settings.websiteBaseDomain || ''
     }
   });
 });

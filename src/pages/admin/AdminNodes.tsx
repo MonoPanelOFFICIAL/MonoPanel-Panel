@@ -2,14 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Network, Plus, RefreshCw, Trash2, Pencil, Copy, KeyRound, Wifi, Cpu, MemoryStick, HardDrive, ShieldCheck, TerminalSquare } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { Badge, Btn, Card, Empty, Field, Modal, NumInput, PageHeader, Select, Spinner, TextInput, Toggle, fmtBytes, fmtMB, useToast } from '../../components/ui/kit';
+import { useBranding } from '../../lib/BrandingContext';
+import { HOSTING_KINDS, SERVER_KIND_IDS, kindInfo } from '../../hostingKinds';
+import { KindIcon } from '../../components/panel/KindIcon';
 
-interface Node { id: string; name: string; locationName: string; locationFlag?: string; fqdn: string; daemonHost: string; daemonPort: number; sftpPort: number; scheme: 'http' | 'https'; ramMB: number; cpuPercent: number; diskMB: number; overallocatePercent: number; maxServers: number; portMin: number; portMax: number; isPublic: boolean; isMaintenance: boolean; premiumOnly: boolean; notes?: string; status: { online: boolean; runtime?: string; version?: string; platform?: string; error?: string; checkedAt?: string; runtimeInfo?: any; system?: { cpus: number; load: number[]; memTotal: number; memFree: number; diskFree: number; diskTotal: number } }; usage: { ramMB: number; cpuPercent: number; diskMB: number; servers: number } }
+interface Node { id: string; name: string; locationName: string; locationFlag?: string; fqdn: string; daemonHost: string; daemonPort: number; sftpPort: number; scheme: 'http' | 'https'; ramMB: number; cpuPercent: number; diskMB: number; overallocatePercent: number; maxServers: number; portMin: number; portMax: number; isPublic: boolean; isMaintenance: boolean; premiumOnly: boolean; notes?: string; services?: string[]; webTarget?: string; status: { online: boolean; runtime?: string; version?: string; platform?: string; error?: string; checkedAt?: string; runtimeInfo?: any; system?: { cpus: number; load: number[]; memTotal: number; memFree: number; diskFree: number; diskTotal: number } }; usage: { ramMB: number; cpuPercent: number; diskMB: number; servers: number } }
 
-const blank = { name: '', locationName: '', locationFlag: '', fqdn: '', daemonHost: '', daemonPort: 3002, sftpPort: 0, scheme: 'http', ramMB: 8192, cpuPercent: 400, diskMB: 102400, overallocatePercent: 0, maxServers: 0, portMin: 20000, portMax: 40000, isPublic: true, isMaintenance: false, premiumOnly: false, notes: '' };
+const blank = { name: '', locationName: '', locationFlag: '', fqdn: '', daemonHost: '', daemonPort: 3002, sftpPort: 0, scheme: 'http', ramMB: 8192, cpuPercent: 400, diskMB: 102400, overallocatePercent: 0, maxServers: 0, portMin: 20000, portMax: 40000, isPublic: true, isMaintenance: false, premiumOnly: false, notes: '', services: [] as string[], webTarget: '' };
 const RUNTIME_LABEL: Record<string, string> = { docker: 'Docker', podman: 'Podman', process: 'Native sandbox' };
 
 export const AdminNodes: React.FC = () => {
   const [toast, say] = useToast();
+  const { enabledHostings } = useBranding();
   const [nodes, setNodes] = useState<Node[] | null>(null);
   const [form, setForm] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -60,6 +64,7 @@ export const AdminNodes: React.FC = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-zinc-500">
                   <span>{n.usage.servers} server{n.usage.servers === 1 ? '' : 's'}</span>
+                  <span className="text-zinc-300">{n.services?.length ? n.services.map(x => kindInfo(x)?.short || x).join(' · ') : 'All types'}</span>
                   <span>Ports {n.portMin}–{n.portMax}</span>
                   {n.status.online ? <><span className="text-zinc-300">{RUNTIME_LABEL[n.status.runtime || ''] || n.status.runtime}</span><span>daemon v{n.status.version}</span>{sys && <span>host {sys.cpus} CPU · {fmtBytes(sys.memFree)} free RAM · {fmtBytes(sys.diskFree)} free disk</span>}</> : <span className="text-red-400">{n.status.error || 'Not connected yet. Run the configure command on the node.'}</span>}
                 </div>
@@ -89,6 +94,27 @@ export const AdminNodes: React.FC = () => {
               <Field label="Over-allocation" hint="0 = strict"><NumInput value={form.overallocatePercent} onChange={v => set('overallocatePercent', v)} suffix="%" /></Field>
               <Field label="Max servers" hint="0 = unlimited"><NumInput value={form.maxServers} onChange={v => set('maxServers', v)} /></Field>
               <Field label="Port range"><div className="flex gap-1.5 items-center"><NumInput value={form.portMin} onChange={v => set('portMin', v)} /><span className="text-zinc-600">–</span><NumInput value={form.portMax} onChange={v => set('portMax', v)} /></div></Field>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3.5 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-zinc-200">Services on this node</p>
+                <p className="text-[11px] text-zinc-500">One daemon runs everything. Pick what this node may host, or leave all unticked to allow every type you sell. VPS nodes are managed on the VPS Nodes page.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {HOSTING_KINDS.filter(k => SERVER_KIND_IDS.includes(k.id as any) && (enabledHostings.includes(k.id) || (form.services || []).includes(k.id))).map(k => {
+                  const on = (form.services || []).includes(k.id);
+                  return (
+                    <button key={k.id} type="button" aria-pressed={on} onClick={() => set('services', on ? (form.services || []).filter((x: string) => x !== k.id) : [...(form.services || []), k.id])}
+                      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${on ? 'border-amber-500/60 bg-amber-500/10 text-amber-300' : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700'}`}>
+                      <KindIcon kind={k.id} className="h-3.5 w-3.5" />{k.short}
+                    </button>
+                  );
+                })}
+              </div>
+              {(!(form.services || []).length || (form.services || []).includes('website')) && enabledHostings.includes('website') && (
+                <Field label="Website DNS target" hint="Where customers point their domain (A / CNAME). Leave empty to use the public address above. Website nodes need ports 80 and 443 open."><TextInput value={form.webTarget || ''} onChange={e => set('webTarget', e.target.value)} placeholder="same as public address" className="font-mono text-xs" /></Field>
+              )}
+              <p className="text-[11px] text-zinc-600">Run the configure command shown after saving: it passes <span className="font-mono">--services</span> so the daemon on the machine matches this list.</p>
             </div>
             <div className="grid sm:grid-cols-3 gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-3.5">
               <Toggle checked={form.isPublic} onChange={v => set('isPublic', v)} label="Visible to users" hint="Shown in the create wizard" />

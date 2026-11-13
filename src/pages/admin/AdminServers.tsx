@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Server, Search, RefreshCw, Ban, CheckCircle2, Trash2, Pencil, Clock, Play, Square, RotateCw, Wrench } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
+import { kindInfo } from '../../hostingKinds';
 import { Badge, Btn, Card, Empty, Field, Modal, NumInput, PageHeader, Select, Spinner, TextInput, fmtDate, fmtMB, statusTone, timeLeft, useToast } from '../../components/ui/kit';
 
-interface Row { id: string; name: string; status: string; suspendedReason?: string; owner: { id: string; username: string; email: string } | null; node: { id: string; name: string; location: string } | null; image: string; limits: { ramMB: number; cpuPercent: number; diskMB: number; swapMB: number; backups: number; databases: number }; ports: number[]; createdAt: string; expiresAt?: string; expiredAt?: string; renewCount: number }
+interface Row { kind?: string; id: string; name: string; status: string; suspendedReason?: string; owner: { id: string; username: string; email: string } | null; node: { id: string; name: string; location: string } | null; image: string; limits: { ramMB: number; cpuPercent: number; diskMB: number; swapMB: number; backups: number; databases: number }; ports: number[]; createdAt: string; expiresAt?: string; expiredAt?: string; renewCount: number }
 
 export const AdminServers: React.FC = () => {
   const [toast, say] = useToast();
@@ -46,7 +47,7 @@ export const AdminServers: React.FC = () => {
             <tbody className="divide-y divide-zinc-800/60">
               {rows.map(s => { const tl = timeLeft(s.expiresAt); return (
                 <tr key={s.id} className="hover:bg-zinc-900/70">
-                  <td className="p-3"><p className="font-semibold text-zinc-100">{s.name}</p><p className="text-[10px] font-mono text-zinc-600">{s.image} · {s.id.slice(0, 8)}</p></td>
+                  <td className="p-3"><p className="font-semibold text-zinc-100">{s.name} <Badge tone="zinc">{kindInfo(s.kind || 'bot')?.short || s.kind}</Badge></p><p className="text-[10px] font-mono text-zinc-600">{s.image} · {s.id.slice(0, 8)}</p></td>
                   <td className="p-3 text-zinc-300">{s.owner?.username || '—'}<p className="text-[10px] text-zinc-600">{s.owner?.email}</p></td>
                   <td className="p-3 text-zinc-400">{s.node?.name}<p className="text-[10px] text-zinc-600">{s.node?.location} · :{s.ports[0]}</p></td>
                   <td className="p-3 font-mono text-zinc-400">{fmtMB(s.limits.ramMB)} · {s.limits.cpuPercent}% · {fmtMB(s.limits.diskMB)}</td>

@@ -2,7 +2,7 @@ import { Addon, HostImage, StoreItem } from '../../src/hostingTypes';
 
 const now = () => new Date().toISOString();
 
-const NODE_INSTALL = `#!/bin/bash
+export const NODE_INSTALL = `#!/bin/bash
 cd /mnt/server
 if [ "$USER_UPLOAD" = "1" ]; then echo "User upload mode: skipping the install step"; echo "Install complete"; exit 0; fi
 if [ -n "$GIT_ADDRESS" ]; then
@@ -32,7 +32,7 @@ export const NODE_STARTUP = [
   'if [ -n "${MAIN_FILE}" ]; then node ./${MAIN_FILE} ${NODE_ARGS}; else echo "MAIN_FILE is not set. Skipping execution."; fi',
 ].join(' ');
 
-const NODE_VARIABLES = (): HostImage['variables'] => [
+export const NODE_VARIABLES = (): HostImage['variables'] => [
   { name: 'Git Repo Address', env: 'GIT_ADDRESS', default: '', description: 'GitHub repo to clone, e.g. https://github.com/user/repo_name', userEditable: true, rules: '/^(https:\\/\\/[^\\s]{3,200})?$/' },
   { name: 'Install Branch', env: 'BRANCH', default: '', description: 'The branch to install.', userEditable: true, rules: '/^[A-Za-z0-9_.\\/-]{0,100}$/' },
   { name: 'User Uploaded Files', env: 'USER_UPLOAD', default: '0', description: 'Skip all the install stuff if you are letting a user upload files. 0 = false (default), 1 = true', userEditable: true, rules: 'boolean' },
@@ -44,7 +44,7 @@ const NODE_VARIABLES = (): HostImage['variables'] => [
   { name: 'Main file', env: 'MAIN_FILE', default: 'index.js', description: 'The file that starts the app. Can be .js and .ts', userEditable: true, rules: '/^[A-Za-z0-9_./-]{0,100}$/' },
   { name: 'Additional Arguments', env: 'NODE_ARGS', default: '', description: 'Any extra arguments for nodejs or ts-node', userEditable: true, rules: '/^[A-Za-z0-9_=.\\/ :,@-]{0,200}$/' },
 ];
-const NODE_DOCKER_IMAGES: Record<string, string> = {
+export const NODE_DOCKER_IMAGES: Record<string, string> = {
   'Node.js 25': 'ghcr.io/pterodactyl/yolks:nodejs_25', 'Node.js 24': 'ghcr.io/pterodactyl/yolks:nodejs_24',
   'Node.js 22': 'ghcr.io/pterodactyl/yolks:nodejs_22', 'Node.js 20': 'ghcr.io/pterodactyl/yolks:nodejs_20',
 };

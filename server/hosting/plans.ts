@@ -1,4 +1,5 @@
 import { BillingPeriod, HostingPlan, HostingSettings } from '../../src/hostingTypes';
+import { normalizeHostings } from '../../src/hostingKinds';
 
 export const DEFAULT_PERIODS: BillingPeriod[] = [
   { id: 'monthly', label: 'Monthly', months: 1, discountPercent: 0 },
@@ -177,6 +178,8 @@ export function sanitizePlan(input: any, existing?: HostingPlan): Omit<HostingPl
       switchNode: b(f.switchNode, ef?.switchNode ?? false), discordRole: b(f.discordRole, ef?.discordRole ?? false), giveaways: b(f.giveaways, ef?.giveaways ?? false), sftp: b(f.sftp, ef?.sftp ?? false),
     },
     renewal: { validityDays: Math.round(n(input?.renewal?.validityDays, 0, 3650, e?.renewal.validityDays ?? 7)), methods },
+    // Hosting kinds this plan can be used for. Empty = every kind the host sells.
+    kinds: normalizeHostings(input?.kinds ?? e?.kinds ?? []).filter(k => k !== 'vps') as HostingPlan['kinds'],
     highlights: (Array.isArray(input?.highlights) ? input.highlights : e?.highlights || []).slice(0, 12).map((h: any) => s(h, 120)).filter(Boolean),
   };
 }

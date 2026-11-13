@@ -3,13 +3,16 @@ import { Crown, Plus, Pencil, Trash2, Star, Server, Cpu, MemoryStick, HardDrive,
 import { apiRequest } from '../../lib/api';
 import { Badge, Btn, Card, Empty, Field, Modal, NumInput, PageHeader, Select, Spinner, TextArea, TextInput, Toggle, cx, fmtMB, money, useToast } from '../../components/ui/kit';
 import type { BillingPeriod, HostingPlan } from '../../hostingTypes';
+import { HOSTING_KINDS, SERVER_KIND_IDS, kindInfo } from '../../hostingKinds';
+import { useBranding } from '../../lib/BrandingContext';
 
-const blankPlan = (): any => ({ name: '', tagline: '', isFree: false, isActive: true, isPopular: false, sortOrder: 10, monthlyPrice: 5, priceOverrides: {}, serverLimit: 3, perServer: { ramMB: 1024, cpuPercent: 100, diskMB: 2048, swapMB: 0, backups: 2, databases: 0, ports: 0, pids: 512, subusers: 3, schedules: 5 }, accountCaps: { ramMB: 0, cpuPercent: 0, diskMB: 0 }, features: { noAds: true, directRenewal: true, subusers: false, scheduledTasks: false, backups: true, chooseNode: false, switchNode: false, discordRole: false, giveaways: false, sftp: true }, renewal: { validityDays: 0, methods: ['payment'] }, highlights: [] });
+const blankPlan = (): any => ({ kinds: [], name: '', tagline: '', isFree: false, isActive: true, isPopular: false, sortOrder: 10, monthlyPrice: 5, priceOverrides: {}, serverLimit: 3, perServer: { ramMB: 1024, cpuPercent: 100, diskMB: 2048, swapMB: 0, backups: 2, databases: 0, ports: 0, pids: 512, subusers: 3, schedules: 5 }, accountCaps: { ramMB: 0, cpuPercent: 0, diskMB: 0 }, features: { noAds: true, directRenewal: true, subusers: false, scheduledTasks: false, backups: true, chooseNode: false, switchNode: false, discordRole: false, giveaways: false, sftp: true }, renewal: { validityDays: 0, methods: ['payment'] }, highlights: [] });
 const FEATURES: [string, string, string][] = [['noAds', 'No ads', 'Hide all ads for this plan'], ['directRenewal', 'Direct renewal', 'Renew without watching ads'], ['backups', 'Backups', 'Create and restore backups'], ['subusers', 'Team members', 'Share servers with others (needs a limit > 0 under Limits)'], ['scheduledTasks', 'Scheduled tasks', 'Cron backups, restarts, commands (needs a limit > 0)'], ['sftp', 'SFTP access', 'Password SFTP login to server files'], ['chooseNode', 'Choose node', 'Pick a node when deploying'], ['switchNode', 'Switch nodes', 'Move a server to another node'], ['discordRole', 'Discord role', ''], ['giveaways', 'Exclusive giveaways', '']];
 const METHODS: [string, string][] = [['ads', 'Watch an ad'], ['blog', 'Read an article'], ['coins', 'Spend coins'], ['payment', 'Pay (plan renewal)']];
 
 export const AdminHostingPlans: React.FC = () => {
   const [toast, say] = useToast();
+  const { enabledHostings } = useBranding();
   const [plans, setPlans] = useState<HostingPlan[] | null>(null);
   const [settings, setSettings] = useState<any>(null);
   const [edit, setEdit] = useState<any>(null);
@@ -67,7 +70,7 @@ export const AdminHostingPlans: React.FC = () => {
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {plans.map(p => (
             <Card key={p.id} accent={p.isPopular} className={cx('space-y-4 flex flex-col', !p.isActive && 'opacity-60')}>
-              <div className="flex items-start justify-between gap-2"><div><p className="text-base font-extrabold text-white flex items-center gap-2">{p.name}{p.isPopular && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}</p><p className="text-[11px] text-zinc-500 mt-0.5">{p.tagline}</p></div><div className="flex flex-col items-end gap-1">{p.isFree && <Badge tone="green">Free</Badge>}{!p.isActive && <Badge>Hidden</Badge>}{settings.freePlanId === p.id && <Badge tone="blue">Default</Badge>}</div></div>
+              <div className="flex items-start justify-between gap-2"><div><p className="text-base font-extrabold text-white flex items-center gap-2">{p.name}{p.isPopular && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}</p><p className="text-[11px] text-zinc-500 mt-0.5">{p.tagline}</p></div><div className="flex flex-col items-end gap-1">{p.isFree && <Badge tone="green">Free</Badge>}{p.kinds?.length ? <Badge tone="zinc">{p.kinds.map(k => kindInfo(k)?.short || k).join(' · ')}</Badge> : null}{!p.isActive && <Badge>Hidden</Badge>}{settings.freePlanId === p.id && <Badge tone="blue">Default</Badge>}</div></div>
               <p className="text-2xl font-extrabold text-amber-300">{p.isFree ? 'Free' : <>{money(p.monthlyPrice)}<span className="text-xs text-zinc-500 font-medium">/mo</span></>}</p>
               {!p.isFree && <div className="flex flex-wrap gap-1">{periods.map(per => { const ov = p.priceOverrides?.[per.id]; const total = ov ?? Math.round(p.monthlyPrice * per.months * (1 - per.discountPercent / 100) * 100) / 100; return <Badge key={per.id}>{per.label}: {money(total)}{ov !== undefined && '*'}</Badge>; })}</div>}
               <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -92,6 +95,11 @@ export const AdminHostingPlans: React.FC = () => {
             {!edit.isFree && <><Field label="Monthly price"><NumInput value={edit.monthlyPrice} min={0} step={0.5} onChange={v => e(['monthlyPrice'], v)} /></Field>
               <div><p className="text-[10px] font-mono uppercase text-zinc-500 mb-2">Per-period price override <span className="normal-case text-zinc-600">(blank = automatic with the period discount)</span></p>
                 <div className="grid sm:grid-cols-3 gap-3">{periods.map(per => { const auto = Math.round(edit.monthlyPrice * per.months * (1 - per.discountPercent / 100) * 100) / 100; return <Field key={per.id} label={`${per.label} · auto ${money(auto)}`}><TextInput type="number" step="0.01" min="0" value={edit.priceOverrides?.[per.id] ?? ''} placeholder={String(auto)} onChange={ev => { const o = { ...edit.priceOverrides }; if (ev.target.value === '') delete o[per.id]; else o[per.id] = Number(ev.target.value); e(['priceOverrides'], o); }} /></Field>; })}</div></div></>}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3.5 space-y-2">
+              <p className="text-xs font-semibold text-zinc-200">Works for</p>
+              <p className="text-[11px] text-zinc-500">Limit this plan to certain hosting types, or leave all unticked to apply it to every type you sell.</p>
+              <div className="flex flex-wrap gap-2">{HOSTING_KINDS.filter(k => SERVER_KIND_IDS.includes(k.id as any) && (enabledHostings.includes(k.id) || (edit.kinds || []).includes(k.id))).map(k => { const on = (edit.kinds || []).includes(k.id); return <button key={k.id} type="button" aria-pressed={on} onClick={() => e(['kinds'], on ? (edit.kinds || []).filter((x: string) => x !== k.id) : [...(edit.kinds || []), k.id])} className={cx('rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors', on ? 'border-amber-500/60 bg-amber-500/10 text-amber-300' : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700')}>{k.short}</button>; })}</div>
+            </div>
             <Field label="Sort order"><NumInput value={edit.sortOrder} onChange={v => e(['sortOrder'], v)} /></Field>
             <Field label="Highlights (one per line)"><TextArea value={Array.isArray(edit.highlights) ? edit.highlights.join('\n') : edit.highlights} onChange={ev => e(['highlights'], ev.target.value.split('\n'))} /></Field>
           </div>}

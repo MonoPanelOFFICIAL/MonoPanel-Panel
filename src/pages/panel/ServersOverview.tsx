@@ -5,10 +5,12 @@ import { AdBanner } from '../../components/AdBanner';
 import { Badge, Btn, Card, Empty, Spinner, fmtMB, statusTone, timeLeft } from '../../components/ui/kit';
 import { useAuth } from '../../lib/AuthContext';
 import { useBranding } from '../../lib/BrandingContext';
+import { ServerKind, kindInfo } from '../../hostingKinds';
+import { KindIcon } from '../../components/panel/KindIcon';
 
 const STATUS_LABEL: Record<string, string> = { transferring: 'Moving', running: 'Running', offline: 'Offline', installing: 'Installing', starting: 'Starting', suspended: 'Suspended', expired: 'Expired', install_failed: 'Install failed' };
 
-const ServerCard: React.FC<{ s: PanelServer; onOpen: () => void }> = ({ s, onOpen }) => {
+export const ServerCard: React.FC<{ s: PanelServer; onOpen: () => void }> = ({ s, onOpen }) => {
   const tl = timeLeft(s.expiresAt);
   const expired = s.status === 'expired';
   return (
@@ -33,22 +35,38 @@ const ServerCard: React.FC<{ s: PanelServer; onOpen: () => void }> = ({ s, onOpe
   );
 };
 
-export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) => void }> = ({ onNavigate }) => {
+/** The customer's servers of ONE hosting type. Bot hosting is the main landing page (welcome card, promos); other types get a compact header. */
+export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) => void; kind?: ServerKind }> = ({ onNavigate, kind = 'bot' }) => {
   const { data, loading, error, refresh } = usePanel();
   const { user } = useAuth();
   const { brandName } = useBranding();
   if (loading && !data) return <Spinner label="Loading your servers…" />;
   if (!data) return <Card><Empty icon={<AlertTriangle className="h-10 w-10" />} title="Could not load the panel" text={error || 'Please try again.'} action={<Btn variant="primary" onClick={refresh}>Retry</Btn>} /></Card>;
 
-  const { plan, promos, servers } = data;
+  const { plan, promos } = data;
+  const servers = data.servers.filter(s => (s.kind || 'bot') === kind);
+  const info = kindInfo(kind)!;
+  const main = kind === 'bot';
+  const newServer = () => onNavigate('server-create', { kind });
   const atLimit = plan.used >= plan.serverLimit;
   const expired = servers.filter(s => s.status === 'expired');
   const brand = brandName || 'MonoPanel';
 
   return (
     <div className="space-y-4">
+      {!main && (
+        <Card className="!p-5 sm:!p-6 flex items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-center shrink-0"><KindIcon kind={kind} className="h-6 w-6 text-amber-400" /></div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white">{info.label}</h1>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1">{info.tagline}</p>
+          </div>
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 text-[11px]"><b className="text-amber-300">{plan.name}</b><span className="text-zinc-500">plan · {plan.used}/{plan.serverLimit} servers</span></span>
+        </Card>
+      )}
+
       {/* Welcome */}
-      <Card className="!p-5 sm:!p-6">
+      {main && <Card className="!p-5 sm:!p-6">
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2 flex-wrap">
           Welcome back, {data.user.displayName || user?.username}!
           {!plan.isFree && <Star className="h-5 w-5 text-amber-400 fill-amber-400" aria-label={`${plan.name} member`} />}
@@ -59,7 +77,7 @@ export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) =
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 text-[11px]"><Users className="h-3 w-3 text-zinc-500" /><b className="text-zinc-100">{data.platform.users.toLocaleString()}</b><span className="text-zinc-500">Users</span></span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 border border-zinc-800 px-2.5 py-1.5 text-[11px]"><b className="text-amber-300">{plan.name}</b><span className="text-zinc-500">plan · {plan.used}/{plan.serverLimit} servers</span></span>
         </div>
-      </Card>
+      </Card>}
 
       {/* Expired warning */}
       {expired.length > 0 && (
@@ -70,7 +88,7 @@ export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) =
       )}
 
       {/* Upgrade promo (free plan only) */}
-      {promos.upgradeCard && plan.isFree && (
+      {main && promos.upgradeCard && plan.isFree && (
         <Card accent className="flex items-center gap-4">
           <div className="h-10 w-10 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-center shrink-0"><Star className="h-5 w-5 text-amber-400" /></div>
           <div className="min-w-0 flex-1">
@@ -82,7 +100,7 @@ export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) =
       )}
 
       {/* Hosting promo */}
-      {promos.hostingCard && (
+      {main && promos.hostingCard && (
         <Card className="flex items-center gap-4">
           <div className="h-10 w-10 rounded-xl border border-zinc-800 bg-zinc-950 flex items-center justify-center shrink-0"><Zap className="h-5 w-5 text-amber-400" /></div>
           <div className="min-w-0 flex-1">
@@ -95,15 +113,15 @@ export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) =
 
       {/* Servers */}
       <div className="flex items-center justify-between pt-1">
-        <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-500">Your servers</h2>
+        <h2 className="text-xs font-mono uppercase tracking-wider text-zinc-500">{main ? 'Your servers' : kind === 'website' ? 'Your websites' : kind === 'lavalink' ? 'Your Lavalink nodes' : 'Your Node.js apps'}</h2>
         <div className="flex gap-2">
           <Btn size="sm" onClick={refresh} aria-label="Refresh"><RefreshCw className="h-3.5 w-3.5" /></Btn>
-          <Btn size="sm" variant="primary" onClick={() => onNavigate('server-create')}><Plus className="h-3.5 w-3.5" />New server</Btn>
+          <Btn size="sm" variant="primary" onClick={newServer}><Plus className="h-3.5 w-3.5" />{main ? 'New server' : kind === 'website' ? 'New website' : kind === 'lavalink' ? 'New node' : 'New app'}</Btn>
         </div>
       </div>
 
       {servers.length === 0 ? (
-        <Card><Empty icon={<Server className="h-14 w-14" />} title="It's quiet here…" text="You do not have any servers yet. Once you create or are assigned a server, it will appear here." action={<Btn variant="primary" onClick={() => onNavigate('server-create')}><Plus className="h-4 w-4" />Create your first server</Btn>} /></Card>
+        <Card><Empty icon={<Server className="h-14 w-14" />} title="It's quiet here…" text={main ? 'You do not have any servers yet. Once you create or are assigned a server, it will appear here.' : `You do not have any ${info.label.replace(' Hosting', '')} servers yet. ${info.description}`} action={<Btn variant="primary" onClick={newServer}><Plus className="h-4 w-4" />Create your first {main ? 'server' : kind === 'website' ? 'website' : kind === 'lavalink' ? 'node' : 'app'}</Btn>} /></Card>
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
           {servers.map(s => <ServerCard key={s.id} s={s} onOpen={() => onNavigate('server', { id: s.id })} />)}
@@ -114,7 +132,7 @@ export const ServersOverview: React.FC<{ onNavigate: (p: string, params?: any) =
         </div>
       )}
 
-      {!plan.noAds && <AdBanner placement="overview" className="pt-2" />}
+      {main && !plan.noAds && <AdBanner placement="overview" className="pt-2" />}
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Access, accessibleServers, can, resolveAccess } from '../hosting/access
 import { daemon, daemonFetch, DaemonError } from '../hosting/daemonClient';
 import { newId } from '../hosting/crypto';
 import { allow } from '../hosting/ratelimit';
+import { enabledServerKinds, imageKind, planAppliesTo, serverKind } from '../hosting/kinds';
 import {
   HostingError, createServer, destroyServer, dropStateCache, liveLimits, liveState, nodeFor, nodeUsage,
   pushSpec, selectableNodes, userCaps, userServers, specFor, renewServer,
@@ -45,7 +46,7 @@ function publicServer(db: Awaited<ReturnType<typeof getDb>>, s: HostServer, live
   const node = db.nodes.find(n => n.id === s.nodeId);
   const image = db.images.find(i => i.id === s.imageId);
   return {
-    id: s.id, name: s.name, description: s.description, status: live?.status || s.status, startedAt: live?.startedAt, installLog: live?.installLog,
+    id: s.id, kind: serverKind(db, s), site: s.site ? { subdomain: s.site.subdomain, domains: s.site.domains } : undefined, name: s.name, description: s.description, status: live?.status || s.status, startedAt: live?.startedAt, installLog: live?.installLog,
     image: image ? { id: image.id, name: image.name, software: image.software, category: image.category, iconUrl: image.iconUrl } : null,
     location: node?.locationName || 'Unknown', address: node ? `${node.fqdn}` : '', ports: s.ports.map(p => ({ host: p.host, container: p.container, label: p.label })),
     limits: liveLimits(s), baseLimits: s.limits, upgrades: s.upgrades, createdAt: s.createdAt, expiresAt: s.expiresAt, expiredAt: s.expiredAt, renewCount: s.renewCount,
@@ -85,17 +86,20 @@ router.get('/overview', handle(async (req, res) => {
 router.get('/catalog', handle(async (req, res) => {
   const db = await getDb();
   const caps = userCaps(db, req.user!);
-  const images = db.images.filter(i => i.isActive);
-  const nodes = db.nodes.filter(n => n.isPublic && !n.isMaintenance && n.status?.online && (!n.premiumOnly || !caps.plan.isFree));
+  const kinds = enabledServerKinds(db);
+  // Only software of hosting kinds the host sells, and only kinds this customer's plan includes.
+  const images = db.images.filter(i => i.isActive && kinds.includes(imageKind(i)) && planAppliesTo(caps.plan, imageKind(i)));
+  const nodes = db.nodes.filter(n => n.isPublic && !n.isMaintenance && n.status?.online && (!n.premiumOnly || !caps.plan.isFree) && (!n.services?.length || n.services.some(k => kinds.includes(k as any))));
   const locations = [...new Map(nodes.map(n => [n.locationName, { name: n.locationName, flag: n.locationFlag || '', nodes: nodes.filter(x => x.locationName === n.locationName).length }])).values()];
   res.json({
     success: true,
     data: {
+      kinds,
       plan: { name: caps.plan.name, isFree: caps.plan.isFree, serverLimit: caps.serverLimit, used: caps.used, perServer: caps.perServer, chooseNode: caps.plan.features.chooseNode },
       locations,
       nodes: caps.plan.features.chooseNode ? nodes.map(n => ({ id: n.id, name: n.name, location: n.locationName, runtime: n.status.runtime })) : [],
       images: images.map(i => ({
-        id: i.id, name: i.name, software: i.software, category: i.category, description: i.description, iconUrl: i.iconUrl, minRamMB: i.minRamMB, runtime: i.runtime,
+        id: i.id, kind: imageKind(i), name: i.name, software: i.software, category: i.category, description: i.description, iconUrl: i.iconUrl, minRamMB: i.minRamMB, runtime: i.runtime,
         versions: Object.keys(i.dockerImages), defaultVersion: i.defaultImage, variables: i.variables.filter(v => v.userEditable).map(v => ({ name: v.name, env: v.env, default: v.default, description: v.description })),
       })),
       packs: db.entitlements.filter(e => e.userId === req.user!.id && !e.serverId).map(e => ({ id: e.id, name: e.name, pack: e.pack })),

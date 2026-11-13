@@ -20,6 +20,8 @@ import statusRoutes from './server/routes/status';
 import apiKeysRoutes from './server/routes/apiKeys';
 import hostingRoutes from './server/routes/hosting';
 import hostingExtraRoutes from './server/routes/hostingExtra';
+import hostingKindsRoutes from './server/routes/hostingKinds';
+import { requireKind } from './server/hosting/kinds';
 import hostingToolsRoutes, { activityHook } from './server/routes/hostingTools';
 import { startScheduleRunner } from './server/hosting/schedules';
 import hostingAdminRoutes, { serveMedia } from './server/routes/hostingAdmin';
@@ -194,9 +196,10 @@ async function startServer() {
   app.use('/api/v1/hosting', hostingRoutes);
   app.use('/api/v1/hosting', hostingExtraRoutes);
   app.use('/api/v1/hosting', hostingToolsRoutes);
+  app.use('/api/v1/hosting', hostingKindsRoutes);
   app.use('/api/v1/economy', economyRoutes);
   app.use('/api/v1/admin/hosting', hostingAdminRoutes);
-  app.use('/api/v1/vps', vpsRoutes);                    // customer VPS panel (must not be shadowed by /api/v1/admin)
+  app.use('/api/v1/vps', requireKind('vps', getDb), vpsRoutes);                    // customer VPS panel (must not be shadowed by /api/v1/admin)
   app.use('/api/v1/admin/vps', vpsAdminRoutes);         // admin VPS console (before the generic /admin router)
   app.use('/api/v1/admin/manager-bot', managerBotRoutes); // Discord Manager Bot control (before the generic /admin router)
   app.use('/api/v1/admin', adminRoutes);

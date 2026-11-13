@@ -3,13 +3,14 @@ import { Github, Twitter, Mail, ArrowUpRight } from 'lucide-react';
 import { MonoLogo } from './MonoLogo';
 import { DiscordGlyph } from './DiscordGlyph';
 import { useBranding } from '../lib/BrandingContext';
+import { HOSTING_KINDS } from '../hostingKinds';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
-  const { socialLinks, discordUrl, footerDescription, brandName, supportEmail } = useBranding();
+  const { socialLinks, discordUrl, footerDescription, brandName, supportEmail, enabledHostings } = useBranding();
   const joinUrl = socialLinks.discord || discordUrl;
   const name = brandName || 'MonoPanel';
 
@@ -31,7 +32,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 Join the {name} Community
               </h3>
               <p className="text-sm sm:text-base text-zinc-400 mt-1">
-                Get 24/7 support, exclusive updates, billing help, and instant bot setup guides.
+                Get 24/7 support, exclusive updates, billing help, and setup guides.
               </p>
             </div>
           </div>
@@ -80,8 +81,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <h4 className={headCls}>Hosting</h4>
             <ul className="space-y-4">
-              <li><button onClick={() => onNavigate('bot')} className={linkCls}>Discord Bot Hosting</button></li>
-              <li><button onClick={() => onNavigate('vps')} className={linkCls}>VPS Hosting</button></li>
+              {HOSTING_KINDS.filter(k => enabledHostings.includes(k.id)).map(k => (
+                <li key={k.id}><button onClick={() => onNavigate(k.publicPage)} className={linkCls}>{k.id === 'bot' ? 'Discord Bot Hosting' : k.label}</button></li>
+              ))}
               <li><button onClick={() => onNavigate('pricing')} className={linkCls}>Plans &amp; Pricing</button></li>
             </ul>
           </div>

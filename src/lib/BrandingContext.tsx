@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiRequest } from './api';
 import { SocialLinks, QuickLink } from '../types';
+import { HostingKind, DEFAULT_ENABLED_HOSTINGS, HOSTING_KINDS, normalizeHostings } from '../hostingKinds';
 
 interface BrandingContextType {
   brandName: string;
@@ -14,6 +15,14 @@ interface BrandingContextType {
   heroDescription: string;
   footerDescription: string;
   quickLinks: QuickLink[];
+  /** Hosting types this host sells (Admin > Hosting Types). Everything else is hidden from the whole site. */
+  enabledHostings: HostingKind[];
+  /** False until the first answer from the server arrives (or it failed and the defaults are used). */
+  hostingsLoaded: boolean;
+  /** True once an admin has saved the hosting-type selection (before that, the .env / default selection applies). */
+  hostingsConfigured: boolean;
+  hasHosting: (kind: HostingKind) => boolean;
+  websiteBaseDomain: string;
   refreshBranding: () => Promise<void>;
   updateBrandNameLocally: (newName: string) => void;
   setPageAnimationsEnabledLocally: (enabled: boolean) => void;
@@ -21,8 +30,18 @@ interface BrandingContextType {
   setHomepageDescriptionsLocally: (hero: string, footer: string) => void;
 }
 
-const DEFAULT_HERO_DESCRIPTION = '24/7 Discord bot hosting and high-performance VPS instances, backed by real support. Powered by high-clock compute hardware and enterprise NVMe storage.';
-const DEFAULT_FOOTER_DESCRIPTION = 'Reliable Bot Hosting and VPS Hosting plans built on the same high-performance network, from budget-friendly value hardware.';
+const DEFAULT_HERO_DESCRIPTION = 'Reliable hosting backed by real support. Powered by high-clock compute hardware and enterprise NVMe storage.';
+const DEFAULT_FOOTER_DESCRIPTION = 'Reliable hosting plans built on the same high-performance network, from budget-friendly value hardware.';
+
+const HOSTINGS_CACHE = 'monopanel_hostings';
+const readCachedHostings = (): HostingKind[] | null => {
+  try { const v = JSON.parse(localStorage.getItem(HOSTINGS_CACHE) || 'null'); const l = normalizeHostings(v); return l.length ? l : null; } catch { return null; }
+};
+/** "Bot Hosting, VPS Hosting & Node.js Hosting" */
+export const hostingsTitle = (kinds: HostingKind[]): string => {
+  const names = kinds.map(k => HOSTING_KINDS.find(x => x.id === k)?.label || k);
+  return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+};
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
@@ -30,7 +49,13 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [brandName, setBrandName] = useState<string>(() => {
     return localStorage.getItem('monopanel_brand_name') || 'MonoPanel';
   });
-  const [brandTagline, setBrandTagline] = useState<string>('Bot Hosting & VPS Hosting');
+  const [brandTagline, setBrandTagline] = useState<string>('');
+  // Cached from the last visit so a bot-only host never flashes VPS links while the first request is in flight.
+  const [cachedHostings] = useState<HostingKind[] | null>(readCachedHostings);
+  const [enabledHostings, setEnabledHostings] = useState<HostingKind[]>(cachedHostings || DEFAULT_ENABLED_HOSTINGS);
+  const [hostingsLoaded, setHostingsLoaded] = useState<boolean>(!!cachedHostings);
+  const [hostingsConfigured, setHostingsConfigured] = useState<boolean>(true);
+  const [websiteBaseDomain, setWebsiteBaseDomain] = useState<string>('');
   const [supportEmail, setSupportEmail] = useState<string>('support@monopanel.com');
   const [discordUrl, setDiscordUrl] = useState<string>('https://discord.gg/monopanel');
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(() => {
@@ -65,6 +90,12 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           localStorage.setItem('monopanel_brand_name', res.data.brandName);
         }
         if (res.data.brandTagline) setBrandTagline(res.data.brandTagline);
+        if (Array.isArray(res.data.enabledHostings)) {
+          const list = normalizeHostings(res.data.enabledHostings);
+          if (list.length) { setEnabledHostings(list); try { localStorage.setItem(HOSTINGS_CACHE, JSON.stringify(list)); } catch { /* private mode */ } }
+        }
+        if (typeof res.data.hostingsConfigured === 'boolean') setHostingsConfigured(res.data.hostingsConfigured);
+        if (typeof res.data.websiteBaseDomain === 'string') setWebsiteBaseDomain(res.data.websiteBaseDomain);
         if (res.data.supportEmail) setSupportEmail(res.data.supportEmail);
         if (res.data.discordUrl) setDiscordUrl(res.data.discordUrl);
         if (res.data.socialLinks) {
@@ -96,6 +127,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     } catch (err) {
       console.error('[BrandingContext] Failed to load branding settings:', err);
+    } finally {
+      setHostingsLoaded(true);
     }
   }, []);
 
@@ -103,19 +136,30 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fetchBranding();
   }, [fetchBranding]);
 
+  // Keep the site in step with the owner's Hosting Types choice without a reload: re-read the settings when the tab comes
+  // back into view, when another tab of this site changes them, and every minute while it stays open.
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') void fetchBranding(); };
+    const onStorage = (e: StorageEvent) => { if (e.key === HOSTINGS_CACHE) void fetchBranding(); };
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('storage', onStorage);
+    const t = window.setInterval(refresh, 60_000);
+    return () => { document.removeEventListener('visibilitychange', refresh); window.removeEventListener('storage', onStorage); window.clearInterval(t); };
+  }, [fetchBranding]);
+
   // Update document.title dynamically when brandName updates
   useEffect(() => {
     if (brandName) {
-      document.title = `${brandName} — Bot Hosting & VPS Hosting`;
+      document.title = `${brandName} — ${hostingsTitle(enabledHostings)}`;
     }
-  }, [brandName]);
+  }, [brandName, enabledHostings]);
 
   const updateBrandNameLocally = (newName: string) => {
     const trimmed = newName.trim();
     if (trimmed) {
       setBrandName(trimmed);
       localStorage.setItem('monopanel_brand_name', trimmed);
-      document.title = `${trimmed} — Bot Hosting & VPS Hosting`;
+      document.title = `${trimmed} — ${hostingsTitle(enabledHostings)}`;
     }
   };
 
@@ -151,6 +195,11 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         heroDescription,
         footerDescription,
         quickLinks,
+        enabledHostings,
+        hostingsLoaded,
+        hostingsConfigured,
+        hasHosting: (kind: HostingKind) => enabledHostings.includes(kind),
+        websiteBaseDomain,
         refreshBranding: fetchBranding,
         updateBrandNameLocally,
         setPageAnimationsEnabledLocally,

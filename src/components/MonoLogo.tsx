@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useBranding } from '../lib/BrandingContext';
+import { kindInfo } from '../hostingKinds';
 import { useTheme } from '../lib/ThemeContext';
 
 interface MonoLogoProps {
@@ -15,7 +16,7 @@ export const MonoLogo: React.FC<MonoLogoProps> = ({
   className = '',
   onClick
 }) => {
-  const { brandName } = useBranding();
+  const { brandName, enabledHostings } = useBranding();
   const { themeAssets } = useTheme();
   const [imgFailed, setImgFailed] = useState(false);
 
@@ -108,7 +109,7 @@ export const MonoLogo: React.FC<MonoLogoProps> = ({
           )}
         </span>
         <span className="text-[8px] sm:text-[9px] font-bold tracking-widest text-zinc-400 uppercase mt-0.5 font-mono hidden min-[380px]:block">
-          Bot &amp; VPS Hosting
+          {enabledHostings.map(k => kindInfo(k)?.short || k).join(' · ')} Hosting
         </span>
       </div>
     </div>

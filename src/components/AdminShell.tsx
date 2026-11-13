@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShieldAlert, Users, Package, ShoppingBag, Tag, Megaphone, LifeBuoy, FileText, Sliders, ArrowLeft, LogOut, Search, ChevronDown,
-  Sparkles, MessageSquare, Bot, Scale, Key, Link2, Mail, Network, Server, Boxes, Crown, CreditCard, Timer, Layers, UserCog, Palette, ScrollText, Menu, X, Receipt, Cloud, HardDrive, Disc3, SlidersHorizontal, History, ShoppingCart
+  Sparkles, MessageSquare, Bot, Scale, Key, Link2, Mail, Network, Server, Boxes, Crown, CreditCard, Timer, Layers, UserCog, Palette, ScrollText, Menu, X, Receipt, Cloud, HardDrive, Disc3, SlidersHorizontal, History, ShoppingCart, Shapes
 } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { useBranding } from '../lib/BrandingContext';
@@ -14,6 +14,7 @@ interface Item { page: string; label: string; icon: React.ComponentType<{ classN
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: 'Overview', items: [{ page: 'admin-dashboard', label: 'System Overview', icon: Sliders }, { page: 'admin-hosting', label: 'Hosting Overview', icon: Layers }] },
   { title: 'Hosting', items: [
+    { page: 'admin-hosting-types', label: 'Hosting Types', icon: Shapes, tone: 'text-amber-400' },
     { page: 'admin-nodes', label: 'Nodes', icon: Network },
     { page: 'admin-servers', label: 'Server Management', icon: Server },
     { page: 'admin-accounts', label: 'Account Management', icon: UserCog },
@@ -65,7 +66,7 @@ const loadCollapsed = (): string[] => { try { const v = JSON.parse(localStorage.
 
 export const AdminShell: React.FC<{ currentPage: string; onNavigate: (page: string) => void; onOpenSearch: () => void; children: React.ReactNode }> = ({ currentPage, onNavigate, onOpenSearch, children }) => {
   const { user, logout } = useAuth();
-  const { brandName } = useBranding();
+  const { brandName, enabledHostings, hostingsConfigured, hostingsLoaded } = useBranding();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState<string[]>(loadCollapsed);
@@ -84,7 +85,9 @@ export const AdminShell: React.FC<{ currentPage: string; onNavigate: (page: stri
   const toggle = (t: string) => setCollapsed(c => { const n = c.includes(t) ? c.filter(x => x !== t) : [...c, t]; try { localStorage.setItem(STORE_KEY, JSON.stringify(n)); } catch { /* private mode */ } return n; });
 
   const q = filter.trim().toLowerCase();
-  const groups = useMemo(() => GROUPS.map(g => ({ ...g, items: q ? g.items.filter(i => i.label.toLowerCase().includes(q)) : g.items })).filter(g => g.items.length), [q]);
+  // A host that does not sell VPS never sees the VPS menu. Everything else is shared by all kinds.
+  const visible = useMemo(() => GROUPS.filter(g => g.title !== 'VPS Hosting' || enabledHostings.includes('vps')), [enabledHostings]);
+  const groups = useMemo(() => visible.map(g => ({ ...g, items: q ? g.items.filter(i => i.label.toLowerCase().includes(q)) : g.items })).filter(g => g.items.length), [q, visible]);
   const current = GROUPS.flatMap(g => g.items.map(i => ({ ...i, group: g.title }))).find(i => i.page === currentPage);
 
   const nav = (
@@ -150,6 +153,12 @@ export const AdminShell: React.FC<{ currentPage: string; onNavigate: (page: stri
       <div className="flex-1 flex min-h-0">
         <aside className="hidden lg:flex w-64 shrink-0 border-r border-zinc-800/80 bg-zinc-950/80 min-h-0">{nav}</aside>
         <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] lg:p-6 flex flex-col" id="admin-main">
+          {hostingsLoaded && !hostingsConfigured && currentPage !== 'admin-hosting-types' && (
+            <button type="button" onClick={() => onNavigate('admin-hosting-types')} className="mb-4 w-full text-left rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 px-4 py-3 flex items-center gap-3 transition-colors">
+              <Shapes className="h-4 w-4 text-amber-400 shrink-0" />
+              <span className="text-xs text-zinc-300"><b className="text-white">Choose what you sell.</b> Pick your hosting types so the website only shows what you provide. <span className="text-amber-300 underline">Open Hosting Types</span></span>
+            </button>
+          )}
           <div className="flex-1 flex flex-col">{children}</div>
           <footer className="pt-6 mt-8 border-t border-zinc-900/80 text-[11px] text-zinc-600 font-mono">© 2025–2026 {brandName || 'Platform'} · Admin Control Panel</footer>
         </main>

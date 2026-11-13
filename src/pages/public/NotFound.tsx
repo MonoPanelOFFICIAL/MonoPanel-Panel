@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Bot, Compass, Server, Tag } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Compass, Tag } from 'lucide-react';
+import { KindIcon } from '../../components/panel/KindIcon';
+import { HOSTING_KINDS } from '../../hostingKinds';
 import { motion } from 'motion/react';
 import { useBranding } from '../../lib/BrandingContext';
 import { routeToUrl } from '../../lib/routing';
@@ -8,14 +10,15 @@ interface NotFoundProps {
   onNavigate: (page: string) => void;
 }
 
-const QUICK_LINKS = [
-  { page: 'bot', label: 'Bot Hosting', description: '24/7 hosting for your Discord bots.', Icon: Bot },
-  { page: 'vps', label: 'VPS Hosting', description: 'Full root access, any OS image.', Icon: Server },
-  { page: 'pricing', label: 'Pricing', description: 'Every plan and what it costs.', Icon: Tag }
-] as const;
+const PRICING_LINK = { page: 'pricing', label: 'Pricing', description: 'Every plan and what it costs.', Icon: Tag };
 
 export const NotFound: React.FC<NotFoundProps> = ({ onNavigate }) => {
-  const { pageAnimationsEnabled, brandName } = useBranding();
+  const { pageAnimationsEnabled, brandName, enabledHostings } = useBranding();
+  // Only hosting types this host sells are suggested.
+  const QUICK_LINKS = [
+    ...HOSTING_KINDS.filter(k => enabledHostings.includes(k.id)).map(k => ({ page: k.publicPage, label: k.label, description: k.tagline, Icon: (p: { className?: string }) => <KindIcon kind={k.id} className={p.className} /> })),
+    PRICING_LINK,
+  ];
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 

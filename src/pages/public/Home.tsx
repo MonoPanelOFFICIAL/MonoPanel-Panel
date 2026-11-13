@@ -7,7 +7,9 @@ import {
 import { motion } from 'motion/react';
 import { useBranding } from '../../lib/BrandingContext';
 import { apiRequest } from '../../lib/api';
-import { Plan } from '../../types';
+import { Plan, Product } from '../../types';
+import { HOSTING_KINDS, HostingKind } from '../../hostingKinds';
+import { KindIcon } from '../../components/panel/KindIcon';
 import { HeroSlider } from '../../components/HeroSlider';
 import { Reveal, ScrollProgress, useHeroScroll, useScrollingFlag, useSmoothWheel } from '../../components/animation/ScrollFx';
 
@@ -29,22 +31,29 @@ const FALLBACK_VPS_FEATURES = [
   'Routine backups & uptime monitoring'
 ];
 
-const TICKER_ITEMS = [
-  '99.99% UPTIME SLA',
-  'DISCORD BOT HOSTING',
-  'FULL ROOT ACCESS VPS',
-  '24/7 PROCESS WATCHDOG',
-  'REAL HUMAN SUPPORT',
-  'FREE MIGRATION ASSISTANCE'
-];
+const KIND_TICKER: Record<HostingKind, string[]> = {
+  bot: ['DISCORD BOT HOSTING', '24/7 PROCESS WATCHDOG'],
+  vps: ['FULL ROOT ACCESS VPS'],
+  website: ['FULL-STACK WEBSITE HOSTING', 'CUSTOM DOMAINS & HTTPS'],
+  nodejs: ['NODE.JS HOSTING', 'GIT DEPLOYS & BUILD TASKS'],
+  lavalink: ['LAVALINK V4 NODES', 'PLUGINS & LIVE PLAYER STATS']
+};
+const FEATURES_FALLBACK: Record<HostingKind, string[]> = {
+  bot: FALLBACK_BOT_FEATURES, vps: FALLBACK_VPS_FEATURES,
+  website: ['Free subdomain & custom domains', 'Git deploys with build steps', 'Front end and back end together', 'Console, files and backups'],
+  nodejs: ['Node 20, 22 and 24', 'npm / pnpm / yarn tasks', 'Git deploy & one-click update', 'Live console and file manager'],
+  lavalink: ['Lavalink v4 ready in a minute', 'Plugin manager & generated config', 'Live players, memory and CPU', 'Copy-paste connection details']
+};
+const FALLBACK_PRICE: Record<HostingKind, number> = { bot: 0.5, vps: 3.5, website: 3, nodejs: 3, lavalink: 3 };
 
-const FAQS = [
+const FAQS: { q: string; a: string; kinds?: HostingKind[] }[] = [
   {
-    q: 'How fast can my bot or server go live?',
-    a: 'Once your payment is verified by our team, your service is set up and your credentials are delivered to your dashboard. Bot Hosting is designed for quick deployment; VPS plans come with full root access.'
+    q: 'How fast can my service go live?',
+    a: 'Once your payment is verified by our team, your service is set up and delivered to your dashboard. Deployment is designed to be quick, so you can go live in minutes.'
   },
   {
-    q: 'What runtimes does Bot Hosting support?',
+    kinds: ['bot', 'nodejs', 'website'],
+    q: 'What runtimes are supported?',
     a: 'Node.js (v18-v22), Python (3.9-3.12), Bun, and Go are supported, with automatic restart on crash and an environment variables & secrets manager.'
   },
   {
@@ -56,6 +65,7 @@ const FAQS = [
     a: 'The payment methods currently enabled are shown at checkout — by default that includes UPI, bank transfer, and gift card redemption.'
   },
   {
+    kinds: ['vps'],
     q: "What's included with VPS Hosting?",
     a: 'VPS plans include high-clock dedicated vCPU cores, full root access with any OS image, a free MySQL/Postgres database & subdomain, and routine backups with uptime monitoring.'
   },
@@ -64,18 +74,22 @@ const FAQS = [
     a: 'Yes. You can deploy a free server straight from your dashboard. Free servers are kept alive by renewing them now and then, and paid plans remove that step and unlock more resources.'
   },
   {
+    kinds: ['bot', 'nodejs', 'website'],
     q: 'How do I get my bot or app onto the server?',
     a: 'Open the File Manager to upload files or a whole folder from your device, pull a file from a URL, or clone a GitHub repository from the Startup tab. You can also connect with SFTP on plans that include it.'
   },
   {
+    kinds: ['bot', 'nodejs', 'website', 'lavalink'],
     q: 'What if I delete a file by accident?',
     a: 'Deleted files go to the Recycle Bin first. You can restore them for 3 days before they are removed for good.'
   },
   {
+    kinds: ['bot', 'nodejs', 'website', 'lavalink'],
     q: 'Can I give friends access to my server?',
     a: 'Yes. Paid plans let you add users to a server and choose exactly what each of them can do, such as viewing the console, editing files or restarting the server.'
   },
   {
+    kinds: ['bot', 'nodejs', 'website'],
     q: 'Where do I set my main file and environment variables?',
     a: 'In the Startup tab of your server. Set the main file, extra Node packages, Git details and other variables there, then restart the server to apply them.'
   }
@@ -91,7 +105,7 @@ const TESTIMONIALS = [
 ];
 
 interface ProductCardProps {
-  icon: React.ComponentType<{ className?: string }>;
+  kind: HostingKind;
   title: string;
   price: number;
   features: string[];
@@ -101,11 +115,11 @@ interface ProductCardProps {
 }
 
 // Module-level on purpose: a component declared inside Home gets a new identity every render and remounts.
-const ProductCard: React.FC<ProductCardProps> = ({ icon: Icon, title, price, features, cta, page, onNavigate }) => (
+const ProductCard: React.FC<ProductCardProps> = ({ kind, title, price, features, cta, page, onNavigate }) => (
   <div className="h-full rounded-3xl border border-zinc-300 bg-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
     <div className="space-y-8">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-950 text-white">
-        <Icon className="h-8 w-8" />
+        <KindIcon kind={kind} className="h-8 w-8" />
       </div>
       <div>
         <h3 className="text-2xl sm:text-3xl font-bold text-zinc-950 font-display">{title}</h3>
@@ -133,9 +147,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ icon: Icon, title, price, fea
 );
 
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
-  const { pageAnimationsEnabled, brandName, socialLinks, discordUrl } = useBranding();
+  const { pageAnimationsEnabled, brandName, socialLinks, discordUrl, enabledHostings } = useBranding();
   const joinUrl = socialLinks?.discord || discordUrl;
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -150,12 +165,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
   useEffect(() => {
     const loadPlans = async () => {
       try {
-        const res = await apiRequest('/public/plans');
+        const [res, prodRes] = await Promise.all([apiRequest('/public/plans'), apiRequest('/public/products')]);
         if (res.success && Array.isArray(res.data)) {
           setPlans(res.data);
         } else if (res.error) {
           console.error('Failed to load plans on home:', res.error.message);
         }
+        if (prodRes.success && Array.isArray(prodRes.data)) setProducts(prodRes.data);
       } catch (err: any) {
         console.error('Failed to load plans on home:', err.message || err);
       }
@@ -164,21 +180,36 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     loadPlans();
   }, []);
 
-  const vpsPlans = plans.filter(p => p.productId === 'prod_vps' || p.id.startsWith('plan_vps_'));
-  const botPlans = plans.filter(p => p.productId === 'prod_bot' || p.id.startsWith('plan_bot_'));
+  // Cheapest plan per hosting type. Plans belong to a type through their product's category (older seeds: by id prefix).
+  const kindOfPlan = (p: Plan): HostingKind | null => {
+    const cat = products.find(x => x.id === p.productId)?.category;
+    if (cat && (HOSTING_KINDS as { id: string }[]).some(k => k.id === cat)) return cat as HostingKind;
+    if (p.productId === 'prod_vps' || p.id.startsWith('plan_vps_')) return 'vps';
+    if (p.productId === 'prod_bot' || p.id.startsWith('plan_bot_')) return 'bot';
+    return null;
+  };
+  const cheapest: Partial<Record<HostingKind, Plan>> = {};
+  for (const p of plans) {
+    const k = kindOfPlan(p);
+    if (k && (!cheapest[k] || p.priceMonthly < cheapest[k]!.priceMonthly)) cheapest[k] = p;
+  }
+  const kindPrice = (k: HostingKind) => cheapest[k]?.priceMonthly ?? FALLBACK_PRICE[k];
+  const kindFeatures = (k: HostingKind) => (cheapest[k]?.features?.length ? cheapest[k]!.features : FEATURES_FALLBACK[k]).slice(0, 5);
+  const prices: Partial<Record<HostingKind, number>> = {};
+  for (const k of enabledHostings) prices[k] = kindPrice(k);
 
-  const cheapestVps = vpsPlans.length > 0
-    ? [...vpsPlans].sort((a, b) => a.priceMonthly - b.priceMonthly)[0]
-    : null;
-  const cheapestBot = botPlans.length > 0
-    ? [...botPlans].sort((a, b) => a.priceMonthly - b.priceMonthly)[0]
-    : null;
+  const shownKinds = HOSTING_KINDS.filter(k => enabledHostings.includes(k.id));
+  const tickerItems = ['99.99% UPTIME SLA', ...shownKinds.flatMap(k => KIND_TICKER[k.id]), 'REAL HUMAN SUPPORT', 'FREE MIGRATION ASSISTANCE'];
+  const faqs = FAQS.filter(f => !f.kinds || f.kinds.some(k => enabledHostings.includes(k)));
+  const kindWords = shownKinds.map(k => k.short);
+  const orList = kindWords.length <= 1 ? (kindWords[0] || 'hosting') : kindWords.slice(0, -1).join(', ') + ' or ' + kindWords[kindWords.length - 1];
 
-  const minVpsPrice = cheapestVps?.priceMonthly ?? 3.5;
-  const minBotPrice = cheapestBot?.priceMonthly ?? 0.5;
-
-  const botFeatures = (cheapestBot?.features?.length ? cheapestBot.features : FALLBACK_BOT_FEATURES).slice(0, 5);
-  const vpsFeatures = (cheapestVps?.features?.length ? cheapestVps.features : FALLBACK_VPS_FEATURES).slice(0, 5);
+  const hasVps = enabledHostings.includes('vps');
+  const hasRuntimes = enabledHostings.some(k => k === 'bot' || k === 'nodejs' || k === 'website');
+  const runtimeBlurb = [
+    hasRuntimes ? `${shownKinds.filter(k => k.id !== 'vps' && k.id !== 'lavalink').map(k => k.label).join(', ')} support the runtimes below` : '',
+    hasVps ? `a VPS gives you full root access with any OS image` : ''
+  ].filter(Boolean).join(', and ') + '.';
 
   const animate = pageAnimationsEnabled && !prefersReducedMotion;
 
@@ -211,14 +242,14 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
       {/* ================= HERO (auto-rotating: Bot Hosting <-> VPS Hosting) ================= */}
       <div ref={heroRef} className="hero-wrap">
         <div ref={heroLayerRef} className="hero-layer">
-          <HeroSlider botPrice={minBotPrice} vpsPrice={minVpsPrice} autoplay={animate} onNavigate={onNavigate} />
+          <HeroSlider prices={prices} enabled={enabledHostings} autoplay={animate} onNavigate={onNavigate} />
         </div>
       </div>
 
       {/* ================= TICKER ================= */}
       <motion.div {...motionChildProps} className="-mx-4 lg:-mx-6 border-y border-zinc-800 bg-zinc-950 overflow-hidden">
         <div className={`flex w-max whitespace-nowrap py-4 text-xs sm:text-sm font-bold tracking-widest text-zinc-400 font-mono ${animate ? 'animate-marquee' : ''}`}>
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+          {[...tickerItems, ...tickerItems].map((item, i) => (
             <span key={i} className="flex items-center">
               <span className="px-6">{item}</span>
               <span className="text-zinc-700">•</span>
@@ -237,12 +268,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               <span className={eyebrow}>Purchase</span>
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-zinc-950 font-display">Our Products</h2>
               <p className="text-base sm:text-lg text-zinc-600">
-                Two products, done properly — no confusing tiers, no filler hosting types.
+                {shownKinds.length === 1 ? 'One product, done properly' : `${shownKinds.length} products, done properly`} — no confusing tiers, no filler hosting types.
               </p>
             </Reveal>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-              <Reveal className="h-full" speed={0.5}><ProductCard icon={Bot} title="Bot Hosting" price={minBotPrice} features={botFeatures} cta="Learn More" page="bot" onNavigate={onNavigate} /></Reveal>
-              <Reveal className="h-full" delay={0.15} speed={1}><ProductCard icon={Server} title="VPS Hosting" price={minVpsPrice} features={vpsFeatures} cta="Learn More" page="vps" onNavigate={onNavigate} /></Reveal>
+            <div className={`grid grid-cols-1 gap-6 sm:gap-8 ${shownKinds.length === 1 ? 'max-w-xl' : shownKinds.length === 2 ? 'lg:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
+              {shownKinds.map((k, i) => (
+                <Reveal key={k.id} className="h-full" delay={(i % 3) * 0.15} speed={0.5 + (i % 2) * 0.5}>
+                  <ProductCard kind={k.id} title={k.label} price={kindPrice(k.id)} features={kindFeatures(k.id)} cta="Learn More" page={k.publicPage} onNavigate={onNavigate} />
+                </Reveal>
+              ))}
             </div>
           </div>
 
@@ -251,12 +285,12 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
             <Reveal className="max-w-2xl mb-12 sm:mb-16 space-y-3">
               <span className={eyebrow}>How it works</span>
               <h2 className="text-3xl sm:text-5xl font-bold text-zinc-950 font-display">Live in three steps</h2>
-              <p className="text-base sm:text-lg text-zinc-600">From sign-up to a running bot or server, without the back-and-forth.</p>
+              <p className="text-base sm:text-lg text-zinc-600">From sign-up to a running service, without the back-and-forth.</p>
             </Reveal>
             <ol className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               {[
                 { icon: UserPlus, title: 'Create a free account', text: 'Sign up in a minute and open your dashboard — no card needed to look around.' },
-                { icon: CreditCard, title: 'Pick a plan and pay', text: 'Choose Bot or VPS hosting and pay with the methods shown at checkout, like UPI, bank transfer or gift card.' },
+                { icon: CreditCard, title: 'Pick a plan and pay', text: `Choose ${orList} hosting and pay with the methods shown at checkout, like UPI, bank transfer or gift card.` },
                 { icon: Play, title: 'Deploy from your dashboard', text: 'Once payment is verified, your credentials land in the dashboard and you can go live.' }
               ].map(({ icon: Icon, title, text }, i) => (
                 <Reveal as="li" delay={i * 0.14} key={title} className="rounded-3xl bg-white border border-zinc-300 p-8 sm:p-10 space-y-5">
@@ -285,7 +319,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               {[
                 { icon: Gauge, value: '99.99%', label: 'Uptime SLA' },
                 { icon: Headphones, value: '24/7', label: 'Process watchdog' },
-                { icon: Bot, value: '2', label: 'Focused products' },
+                { icon: Bot, value: String(shownKinds.length), label: shownKinds.length === 1 ? 'Focused product' : 'Focused products' },
                 { icon: Users, value: 'Human', label: 'Support, not bots' }
               ].map(({ icon: Icon, value, label }, i) => (
                 <Reveal key={label} delay={i * 0.1} speed={0.35 + (i % 2) * 0.5} className="p-4">
@@ -310,15 +344,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               Built for Uptime
             </h2>
             <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto mt-5 leading-relaxed">
-              {brandName} keeps your bots and servers running with process watchdogs, routine backups, uptime monitoring, and a team that answers tickets.
+              {brandName} keeps your services running with process watchdogs, routine backups, uptime monitoring, and a team that answers tickets.
             </p>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-14">
               {[
                 { icon: RotateCw, label: 'Auto-restart on crash' },
                 { icon: ShieldCheck, label: 'Uptime monitoring' },
                 { icon: Database, label: 'Routine backups' },
-                { icon: Lock, label: 'Full root access' },
-                { icon: Terminal, label: 'Multi-runtime bots' },
+                ...(hasVps ? [{ icon: Lock, label: 'Full root access' }] : []),
+                ...(hasRuntimes ? [{ icon: Terminal, label: 'Multi-runtime apps' }] : []),
                 { icon: Headphones, label: 'Real human support' }
               ].map(({ icon: Icon, label }, i) => (
                 <Reveal key={label} delay={(i % 3) * 0.1} speed={0.25 + (i % 3) * 0.3} className="rounded-3xl"><div className="h-full p-8 sm:p-10 rounded-3xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center gap-4 text-center hover:border-zinc-600 transition-colors">
@@ -330,12 +364,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           </div>
 
           {/* Runtimes */}
+          {hasRuntimes && (
           <div className="border-t border-zinc-800 pt-20 sm:pt-28 grid lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-20 items-center">
             <div className="space-y-4">
               <span className={eyebrow}>Runtimes</span>
               <h2 className="text-3xl sm:text-5xl font-bold text-white font-display">Run what you already build</h2>
               <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
-                Bring your bot as it is. Bot Hosting supports the runtimes below, and a VPS gives you full root access with any OS image.
+                Bring your project as it is. {runtimeBlurb}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:gap-5">
@@ -357,6 +392,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
               ))}
             </div>
           </div>
+          )}
 
           {/* Testimonials */}
           <div className="border-t border-zinc-800 pt-20 sm:pt-28">
@@ -392,7 +428,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
                 <h2 className={`text-3xl sm:text-5xl font-bold font-display ${animate ? 'mono-heading-shimmer' : 'text-white'}`}>Frequently Asked Questions</h2>
               </div>
               <div className="space-y-3.5">
-                {FAQS.map((item, i) => {
+                {faqs.map((item, i) => {
                   const isOpen = openFaq === i;
                   return (
                     <div key={i} className="rounded-3xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
@@ -420,7 +456,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
           <div className="rounded-[2rem] bg-white p-10 sm:p-16 lg:p-20 text-center space-y-6 shadow-2xl">
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-zinc-950 font-display">Ready to launch?</h2>
             <p className="text-zinc-600 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-              Create a free account and deploy your first bot or server in minutes. Free migration assistance available.
+              Create a free account and deploy your first service in minutes. Free migration assistance available.
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-3">
               <button

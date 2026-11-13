@@ -10,6 +10,8 @@ import { configureCommand, daemon, pingNode } from '../hosting/daemonClient';
 import { linkedNote, secretForNewNode, shareSecretWithPeers } from '../daemonLink';
 import { defaultHostingSettings, sanitizeHostingSettings, sanitizePlan } from '../hosting/plans';
 import { sanitizeAddon, sanitizeImage, sanitizeNode, sanitizeStoreItem } from '../hosting/sanitize';
+import { HOSTING_KINDS, KIND_IDS, isHostingKind, normalizeHostings } from '../../src/hostingKinds';
+import { enabledKinds, serverKind } from '../hosting/kinds';
 import { backupDbNow, dbInfo } from '../db';
 import { destroyServer, liveLimits, liveState, nodeUsage, pushSpec, refreshNodeStatuses, renewServer, stopQuietly } from '../hosting/serverService';
 import { publicBaseUrl } from '../hosting/billing';
@@ -62,7 +64,7 @@ router.post('/nodes', wrap(async (req, res) => {
   await audit(req, 'NODE_CREATED', node.id, `Added node ${node.name}`);
   const panelUrl = publicBaseUrl(req as any);
   // The secret is shown exactly once, together with the command to run on the node.
-  res.status(201).json({ success: true, data: { node: publicNode(db, node), secret, command: configureCommand(panelUrl, secret, node.daemonPort, undefined, node.sftpPort), panelUrl, note: peer ? linkedNote(peer.name, 'VPS node') : undefined } });
+  res.status(201).json({ success: true, data: { node: publicNode(db, node), secret, command: configureCommand(panelUrl, secret, node.daemonPort, undefined, node.sftpPort, node.services), panelUrl, note: peer ? linkedNote(peer.name, 'VPS node') : undefined } });
 }));
 
 router.put('/nodes/:id', wrap(async (req, res) => {
@@ -76,14 +78,14 @@ router.post('/nodes/:id/rotate-secret', wrap(async (req, res) => {
   const secret = randomToken(36); n.secretEnc = encryptSecret(secret); n.status = { ...n.status, online: false };
   const shared = shareSecretWithPeers(db, n); saveDbSync();   // a VPS node on the same daemon gets the new secret too
   await audit(req, 'NODE_SECRET_ROTATED', n.id, `Rotated secret for ${n.name}`);
-  res.json({ success: true, data: { secret, command: configureCommand(publicBaseUrl(req as any), secret, n.daemonPort, undefined, n.sftpPort), note: shared.length ? `The same daemon is also registered as: ${shared.join(', ')}. Its secret was updated too.` : undefined } });
+  res.json({ success: true, data: { secret, command: configureCommand(publicBaseUrl(req as any), secret, n.daemonPort, undefined, n.sftpPort, n.services), note: shared.length ? `The same daemon is also registered as: ${shared.join(', ')}. Its secret was updated too.` : undefined } });
 }));
 
 router.post('/nodes/:id/test', wrap(async (req, res) => {
   const db = await getDb(); const n = db.nodes.find(x => x.id === req.params.id); if (!n) return err(res, 404, 'Node not found.');
   try {
     const { ping, system } = await pingNode(n);
-    n.status = { online: true, checkedAt: new Date().toISOString(), version: ping.version, runtime: ping.runtime, runtimeInfo: ping.runtimeInfo, platform: ping.platform, hostname: ping.hostname, system };
+    n.status = { online: true, checkedAt: new Date().toISOString(), version: ping.version, runtime: ping.runtime, runtimeInfo: ping.runtimeInfo, platform: ping.platform, hostname: ping.hostname, system, services: Array.isArray(ping.services) ? ping.services : undefined, web: ping.web };
     saveDbSync(); res.json({ success: true, data: publicNode(db, n) });
   } catch (e: any) {
     n.status = { ...n.status, online: false, checkedAt: new Date().toISOString(), error: e.message }; saveDbSync();
@@ -104,7 +106,7 @@ router.get('/servers', wrap(async (req, res) => {
   const q = String(req.query.search || '').toLowerCase(); const status = String(req.query.status || ''); const nodeId = String(req.query.nodeId || '');
   const rows = db.servers.filter(s => (!status || s.status === status) && (!nodeId || s.nodeId === nodeId)).map(s => {
     const owner = db.users.find(u => u.id === s.ownerId); const node = db.nodes.find(n => n.id === s.nodeId); const image = db.images.find(i => i.id === s.imageId);
-    return { id: s.id, name: s.name, status: s.status, suspendedReason: s.suspendedReason, owner: owner ? { id: owner.id, username: owner.username, email: owner.email } : null, node: node ? { id: node.id, name: node.name, location: node.locationName } : null, image: image?.name || '?', limits: liveLimits(s), ports: s.ports.map(p => p.host), createdAt: s.createdAt, expiresAt: s.expiresAt, expiredAt: s.expiredAt, renewCount: s.renewCount };
+    return { id: s.id, kind: serverKind(db, s), name: s.name, status: s.status, suspendedReason: s.suspendedReason, owner: owner ? { id: owner.id, username: owner.username, email: owner.email } : null, node: node ? { id: node.id, name: node.name, location: node.locationName } : null, image: image?.name || '?', limits: liveLimits(s), ports: s.ports.map(p => p.host), createdAt: s.createdAt, expiresAt: s.expiresAt, expiredAt: s.expiredAt, renewCount: s.renewCount };
   }).filter(r => !q || r.name.toLowerCase().includes(q) || r.id.includes(q) || r.owner?.username.toLowerCase().includes(q) || r.owner?.email.toLowerCase().includes(q));
   res.json({ success: true, data: rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 500) });
 }));
@@ -363,6 +365,42 @@ router.delete('/media/:id', wrap(async (req, res) => {
 }));
 
 void liveState; void refreshNodeStatuses;
+
+// ============================================================================ hosting types (what this host sells)
+const kindsView = (db: Awaited<ReturnType<typeof getDb>>) => {
+  const enabled = enabledKinds(db);
+  return {
+    enabled, configured: !!db.settings.hostingsConfigured, websiteBaseDomain: db.settings.websiteBaseDomain || '',
+    kinds: HOSTING_KINDS.map(k => ({
+      ...k, enabled: enabled.includes(k.id),
+      servers: k.engine === 'vps' ? db.vpsServers.length : db.servers.filter(x => serverKind(db, x) === k.id).length,
+      nodes: k.engine === 'vps' ? db.vpsNodes.length : db.nodes.filter(n => !n.services?.length || n.services.includes(k.id)).length,
+      products: db.products.filter(p => String(p.category).toLowerCase() === k.category).length,
+    })),
+  };
+};
+
+router.get('/kinds', wrap(async (_req, res) => { res.json({ success: true, data: kindsView(await getDb()) }); }));
+
+router.put('/kinds', wrap(async (req, res) => {
+  const db = await getDb();
+  const raw = req.body?.enabled;
+  if (!Array.isArray(raw) || raw.some((k: unknown) => !isHostingKind(k))) return err(res, 400, 'Choose from: ' + KIND_IDS.join(', '), 'INVALID_KINDS');
+  const next = normalizeHostings(raw);
+  if (!next.length) return err(res, 400, 'Keep at least one hosting type enabled.', 'INVALID_KINDS');
+  if (req.body?.websiteBaseDomain !== undefined) {
+    const d = String(req.body.websiteBaseDomain || '').trim().toLowerCase().replace(/^\*?\./, '');
+    if (d && !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/.test(d)) return err(res, 400, 'Enter a domain like sites.example.com (no http://, no wildcard).', 'INVALID_DOMAIN');
+    db.settings.websiteBaseDomain = d;
+  }
+  const before = enabledKinds(db);
+  db.settings.enabledHostings = next;
+  db.settings.hostingsConfigured = true;
+  saveDbSync();
+  await audit(req, 'HOSTING_TYPES_UPDATED', 'settings', `Hosting types: ${before.join(', ') || 'none'} -> ${next.join(', ')}`);
+  res.json({ success: true, data: kindsView(db) });
+}));
+
 export default router;
 
 /** Public, cache-friendly image serving (no SVG, nosniff, id is a random 24-hex string so it cannot traverse). */
