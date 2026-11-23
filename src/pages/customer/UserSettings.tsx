@@ -272,7 +272,7 @@ export const UserSettings: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-8">
+    <div className="space-y-8">
       
       {/* Header */}
       <div className="border-b border-zinc-800 pb-5">
@@ -397,23 +397,6 @@ export const UserSettings: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              {/* Custom Cursor Toggle */}
-              <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white">Interactive Custom Cursor</div>
-                  <div className="text-[10px] text-zinc-500">Premium glowing aura outer ring.</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={customCursorEnabled}
-                    onChange={(e) => setCustomCursorEnabled(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                </label>
-              </div>
-
               {/* Animations Toggle */}
               <div className="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between">
                 <div>

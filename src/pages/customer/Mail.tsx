@@ -70,7 +70,7 @@ export const Mail: React.FC<MailProps> = () => {
   const unreadCount = mail.filter(m => !m.isRead).length;
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
@@ -118,7 +118,7 @@ export const Mail: React.FC<MailProps> = () => {
                   onClick={() => handleSelect(m)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
                     selected?.id === m.id
-                      ? 'bg-zinc-800/80 border-violet-500 shadow-lg shadow-violet-500/10'
+                      ? 'bg-zinc-800/80 border-violet-500 shadow-lg'
                       : m.isRead
                       ? 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                       : 'bg-zinc-900 border-zinc-700 hover:border-zinc-600'

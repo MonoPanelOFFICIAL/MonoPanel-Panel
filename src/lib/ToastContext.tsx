@@ -81,12 +81,12 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
               role={isError ? 'alert' : 'status'}
               className={`pointer-events-auto flex items-start gap-3 p-3.5 sm:p-4 rounded-2xl border shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-0 animate-in fade-in slide-in-from-bottom-2 ${
                 isSuccess
-                  ? 'bg-zinc-900/95 border-emerald-500/30 text-zinc-100 shadow-emerald-950/20'
+                  ? 'bg-zinc-900/95 border-emerald-500/30 text-zinc-100'
                   : isError
-                  ? 'bg-zinc-900/95 border-rose-500/30 text-zinc-100 shadow-rose-950/20'
+                  ? 'bg-zinc-900/95 border-rose-500/30 text-zinc-100'
                   : isWarning
-                  ? 'bg-zinc-900/95 border-amber-500/30 text-zinc-100 shadow-amber-950/20'
-                  : 'bg-zinc-900/95 border-violet-500/30 text-zinc-100 shadow-violet-950/20'
+                  ? 'bg-zinc-900/95 border-amber-500/30 text-zinc-100'
+                  : 'bg-zinc-900/95 border-violet-500/30 text-zinc-100'
               }`}
             >
               <div className="shrink-0 mt-0.5">

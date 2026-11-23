@@ -1,0 +1,218 @@
+/* ============================================================================
+   Site sidebar — one navigation for every screen size.
+   Desktop: fixed left sidebar (layout.css). Phones: the SAME sidebar slides in from the left behind a menu button.
+   (Home's separate bottom bar + drawer were removed on purpose: the Panel has a single navigation.)
+   ========================================================================== */
+
+/* Home's rules hide the sidebar under 860px; here it stays, just off-canvas. */
+.site-sidebar {
+  border-bottom: 0;
+  border-right: 1px solid var(--color-border);
+  padding: 16px 12px 12px;
+  overflow: hidden;
+}
+@media (max-width: 860px) {
+  .site-sidebar {
+    display: flex;
+    width: min(86vw, 320px);
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: var(--z-modal);
+    transform: translateX(-104%);
+    visibility: hidden;
+    transition: transform 0.3s var(--ease-standard), visibility 0s linear 0.3s;
+  }
+  .site-sidebar.open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.3s var(--ease-standard), visibility 0s;
+    box-shadow: 24px 0 60px rgba(0, 0, 0, 0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-sidebar, .site-sidebar.open { transition: none; }
+}
+
+.site-sidebar-header { flex: none; padding-bottom: 10px; }
+.mp-sidebar-close {
+  display: none;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-2);
+  cursor: pointer;
+}
+.mp-sidebar-close:hover { background: var(--color-text-1); color: var(--color-bg); }
+@media (max-width: 860px) { .mp-sidebar-close { display: grid; } }
+
+/* The middle of the sidebar scrolls; the header and the footer never get clipped. */
+.site-sidebar-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0 -6px;
+  padding: 2px 6px 10px;
+  scrollbar-width: thin;
+}
+.site-sidebar-scroll::-webkit-scrollbar { width: 4px; }
+
+/* Home fades each link in on load; in an app that makes the menu flash on every page, so links just appear. */
+.site-nav-link, .site-section-link { animation: none; }
+
+/* Sections */
+.mp-nav-group { margin: 0 0 14px; }
+.mp-nav-group:last-child { margin-bottom: 0; }
+.mp-nav-title {
+  margin: 0 12px 6px;
+  color: var(--color-text-3);
+  font: 600 10px/1.3 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mp-nav-title--btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(100% - 24px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mp-nav-title--btn:hover { color: var(--color-text-1); background: transparent; }
+.mp-nav-title--btn svg { transition: transform var(--dur-default) var(--ease-standard); }
+.mp-nav-title--btn.is-shut svg { transform: rotate(-90deg); }
+.mp-nav-empty { margin: 8px 12px; color: var(--color-text-3); font-size: 12px; }
+
+/* Link internals */
+.site-nav-link, .site-section-link { text-decoration: none; }
+.site-nav-link > svg, .site-section-link .mp-nav-ico { flex: none; }
+.mp-nav-ico { display: inline-flex; margin-right: 10px; }
+.mp-nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-section-link .mp-nav-label { flex: 1; }
+button.site-nav-link, button.site-section-link { border: 0; background: transparent; text-align: left; font-family: inherit; cursor: pointer; }
+button.site-nav-link:hover, button.site-section-link:hover { background: var(--color-text-1); color: var(--color-bg); }
+button.site-nav-link.active, button.site-section-link.active { background: var(--color-text-1); color: var(--color-bg); }
+
+/* Badge: a small count pill, never stretched by Home's "span { flex: 1 }" link rule */
+.site-nav-link .site-nav-badge,
+.site-section-link .site-nav-badge {
+  flex: 0 0 auto;
+  margin-left: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  overflow: visible;
+  border-radius: 9px;
+  background: var(--color-text-1);
+  color: var(--color-bg);
+  font: 700 10px/18px var(--font-mono);
+  text-align: center;
+  text-overflow: clip;
+}
+.site-nav-link:hover .site-nav-badge, .site-nav-link.active .site-nav-badge,
+.site-section-link:hover .site-nav-badge, .site-section-link.active .site-nav-badge { background: var(--color-bg); color: var(--color-text-1); }
+.site-section-link > svg:last-child { margin-left: 8px; }
+
+/* Server / VPS scope (the page's own tabs shown in the sidebar) */
+.mp-nav-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: var(--color-text-3);
+  font-size: 13px;
+  text-decoration: none;
+}
+.mp-nav-back:hover { background: var(--color-text-1); color: var(--color-bg); }
+.mp-scope-card {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-2);
+}
+.mp-scope-card .t { font-size: 14px; font-weight: 650; color: var(--color-text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-scope-card .s { margin-top: 2px; font: 500 10px/1.3 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-3); }
+
+/* Footer: search, exit link, user card or sign-in buttons */
+.site-sidebar-footer { flex: none; display: grid; gap: 8px; padding: 12px 0 0; border-top: 1px solid var(--color-border); }
+.mp-search-btn { width: 100%; justify-content: space-between; }
+.mp-search-btn > span { display: inline-flex; align-items: center; gap: 8px; }
+.mp-search-btn kbd { font: 600 10px var(--font-mono); opacity: 0.7; }
+.mp-exit-btn { width: 100%; justify-content: flex-start; }
+.site-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-2);
+}
+.site-user-card img, .site-user-card .avatar-fallback { width: 32px; height: 32px; border-radius: 9px; flex: none; }
+.site-user-card img { object-fit: cover; background: var(--color-bg-hover); }
+.site-user-card .avatar-fallback { display: grid; place-items: center; background: var(--color-bg-hover); font: 700 13px var(--font-sans); }
+.site-user-card .name { font-size: 13px; font-weight: 600; color: var(--color-text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-user-card .sub { font: 500 10px/1.3 var(--font-mono); color: var(--color-text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-user-card button { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--color-text-3); cursor: pointer; }
+.site-user-card button:hover { background: var(--color-text-1); color: var(--color-bg); }
+.site-auth-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.site-auth-row .btn-primary, .site-auth-row .btn-secondary { justify-content: center; padding-left: 10px; padding-right: 10px; }
+
+/* Phones: slim top bar with the menu button + scrim behind the open sidebar */
+.mp-topbar { display: none; }
+.mp-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-modal) - 1);
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-standard);
+}
+@media (min-width: 861px) { .mp-scrim { display: none; } }
+.mp-scrim.open { opacity: 1; pointer-events: auto; }
+@media (max-width: 860px) {
+  .mp-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-sticky);
+    height: calc(52px + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 12px 0;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .mp-topbar-end { margin-left: auto; }
+}
+.mp-topbar-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-1);
+  cursor: pointer;
+}
+.mp-topbar-btn:hover { background: var(--color-text-1); color: var(--color-bg); }
+
+/* Home's section links only carried a chevron, so they dim every svg; keep the leading icon readable */
+.site-section-link .mp-nav-ico svg { opacity: 0.85; }
+.site-section-link:hover .mp-nav-ico svg, .site-section-link.active .mp-nav-ico svg { opacity: 1; }

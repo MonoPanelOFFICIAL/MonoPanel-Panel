@@ -167,32 +167,24 @@ export const Reveal: React.FC<{
    ========================================================================== */
 export const ScrollProgress: React.FC = React.memo(function ScrollProgress() {
   const barRef = useRef<HTMLDivElement>(null);
-  const headRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const bar = barRef.current;
-    const head = headRef.current;
-    if (!bar || !head) return;
+    if (!bar) return;
     const root = document.documentElement;
     return subscribeScroll(y => {
       const max = Math.max(1, root.scrollHeight - window.innerHeight);
       const p = Math.min(1, Math.max(0, y / max));
       bar.style.transform = `scaleX(${p.toFixed(4)})`;
-      head.style.transform = `translate3d(${(p * window.innerWidth - 5).toFixed(1)}px,-50%,0)`;
     });
   }, []);
 
   return createPortal(
-    <div aria-hidden="true" className="pointer-events-none fixed left-0 top-0 z-[45] h-[3px] w-full">
+    <div aria-hidden="true" className="pointer-events-none fixed left-0 top-0 z-[600] h-[2px] w-full">
       <div
         ref={barRef}
         style={{ transform: 'scaleX(0)', transformOrigin: '0 50%', willChange: 'transform' }}
-        className="h-full w-full bg-gradient-to-r from-transparent via-blue-500 to-white"
-      />
-      <span
-        ref={headRef}
-        style={{ transform: 'translate3d(-5px,-50%,0)', willChange: 'transform' }}
-        className="absolute left-0 top-1/2 h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_14px_5px_rgba(96,165,250,0.9)]"
+        className="h-full w-full bg-white"
       />
     </div>,
     document.body

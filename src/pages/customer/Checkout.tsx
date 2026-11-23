@@ -218,7 +218,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onNavigate, params }) => {
         <p className="text-xs text-zinc-400">Head back to pricing and pick a plan to check out.</p>
         <button
           onClick={() => onNavigate('pricing')}
-          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-gradient-to-r ${accentClasses.gradient}`}
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-zinc-950 bg-gradient-to-r ${accentClasses.gradient}`}
         >
           <ArrowLeft className="h-4 w-4" /> Back to Pricing
         </button>
@@ -355,7 +355,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onNavigate, params }) => {
                       href={provision.panelUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-xs text-white bg-gradient-to-r ${accentClasses.gradient}`}
+                      className={`w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-xs text-zinc-950 bg-gradient-to-r ${accentClasses.gradient}`}
                     >
                       Go to Panel <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -692,7 +692,7 @@ export const Checkout: React.FC<CheckoutProps> = ({ onNavigate, params }) => {
             (cyclePrice > 0 && paymentMethod === 'credits' && !canAfford) ||
             (cyclePrice > 0 && paymentMethod === 'giftcard' && !giftCardCode.trim())
           }
-          className={`w-full py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50 bg-gradient-to-r ${accentClasses.gradient}`}
+          className={`w-full py-3.5 rounded-xl font-semibold text-sm text-zinc-950 flex items-center justify-center gap-2 disabled:opacity-50 bg-gradient-to-r ${accentClasses.gradient}`}
         >
           {submitting ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>

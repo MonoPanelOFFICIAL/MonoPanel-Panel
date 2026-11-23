@@ -17,16 +17,16 @@ export interface ThemePreset {
 export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'golden',
-    name: 'MonoPanel Black & White (Default)',
+    name: 'MonoPanel Black & White (Default, matches Home)',
     description: 'The signature MonoPanel dark palette with crisp, high-contrast black & white highlights.',
     accent: '#ffffff',
     accentHover: '#e4e4e7',
-    bgBase: '#0a0a0b',
-    bgCard: '#131316',
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    bgBase: '#000000',
+    bgCard: '#0b0b0b',
+    borderColor: 'rgba(255, 255, 255, 0.13)',
     badgeBg: 'rgba(255, 255, 255, 0.10)',
     badgeText: '#f4f4f5',
-    gradient: 'from-zinc-950 via-black to-zinc-900',
+    gradient: 'from-zinc-200 via-zinc-200 to-zinc-300',
     glowColor: 'rgba(255, 255, 255, 0.18)',
     previewColors: ['#0a0a0b', '#131316', '#ffffff', '#f4f4f5']
   },
@@ -117,8 +117,15 @@ export interface FontOption {
 
 export const FONT_OPTIONS: FontOption[] = [
   {
+    id: 'Space Grotesk Variable',
+    name: 'Space Grotesk (Default, same as MonoPanel Home)',
+    category: 'sans',
+    fontFamily: '"Space Grotesk Variable", "Space Grotesk", ui-sans-serif, system-ui, sans-serif',
+    sample: 'The MonoPanel Home typeface, self-hosted.'
+  },
+  {
     id: 'Quicksand',
-    name: 'Quicksand (Default)',
+    name: 'Quicksand',
     category: 'sans',
     fontFamily: '"Quicksand", sans-serif',
     sample: 'Sphinx of black quartz, judge my vow.'
@@ -153,7 +160,7 @@ export const FONT_OPTIONS: FontOption[] = [
   },
   {
     id: 'Space Grotesk',
-    name: 'Space Grotesk',
+    name: 'Space Grotesk (Google Fonts copy)',
     category: 'display',
     fontFamily: '"Space Grotesk", sans-serif',
     sample: 'Futuristic technical aesthetic for high-tech dashboards.'

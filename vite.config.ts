@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
+import hoverOnly from './src/lib/postcss-hover-only.mjs';
 
 export default defineConfig(() => {
   const allowedHostsEnv = process.env.VITE_ALLOWED_HOSTS || process.env.ALLOWED_HOSTS;
@@ -11,6 +12,8 @@ export default defineConfig(() => {
 
   return {
     plugins: [react(), tailwindcss()],
+    // Hover styles only apply on devices with a real pointer (no sticky inverted hover on touch), same as MonoPanel Home.
+    css: { postcss: { plugins: [hoverOnly() as any] } },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

@@ -259,7 +259,7 @@ const defaultSettings: SystemSettings = {
   },
   themeSettings: {
     activeThemeId: 'golden',
-    activeFontId: 'Quicksand',
+    activeFontId: 'Space Grotesk Variable',
     cardStyle: 'rounded-2xl',
     glowIntensity: 'vibrant',
     allowUserCustomization: true,

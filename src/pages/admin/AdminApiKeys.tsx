@@ -286,7 +286,7 @@ export const AdminApiKeys: React.FC<AdminApiKeysProps> = () => {
   });
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8">
       {/* Top Banner & Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -320,7 +320,7 @@ export const AdminApiKeys: React.FC<AdminApiKeysProps> = () => {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition"
+            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs flex items-center gap-2 shadow-lg transition"
           >
             <Plus className="h-4 w-4" />
             <span>Generate New API Key</span>
@@ -939,7 +939,7 @@ export const AdminApiKeys: React.FC<AdminApiKeysProps> = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !newKeyName.trim()}
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-bold flex items-center gap-2 shadow-lg"
                 >
                   <Key className="h-4 w-4" />
                   <span>{isSubmitting ? 'Generating Secret...' : 'Generate API Key'}</span>

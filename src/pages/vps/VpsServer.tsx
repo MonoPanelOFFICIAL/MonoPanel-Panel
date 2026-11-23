@@ -9,6 +9,7 @@ import { FilesTab } from './tabs/FilesTab';
 import { SshTab } from './tabs/SshTab';
 import { ActivityTab } from './tabs/ActivityTab';
 import { SettingsTab } from './tabs/SettingsTab';
+import { ScopedNavRegister } from '../../lib/navStore';
 
 type Tab = 'overview' | 'console' | 'files' | 'ssh' | 'activity' | 'settings';
 
@@ -59,7 +60,7 @@ export const VpsServer: React.FC<{ id: string; onNavigate: (p: string, params?: 
       {toast}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-zinc-500">
         <button onClick={() => onNavigate('vps-list')} className="flex items-center gap-1.5 hover:text-zinc-200"><ArrowLeft className="h-3.5 w-3.5" />My VPS</button><span className="text-zinc-700">/</span><span className="text-zinc-300 font-semibold truncate">{vps.name}</span>
-        <span className="ml-auto font-mono text-[10px] text-zinc-600 hidden sm:block">ID: {vps.id.slice(0, 8)}</span>
+        <span className="ml-auto font-mono text-[10px] text-zinc-600 hidden sm:block">ID: {vps.id}</span>
       </nav>
 
       <Card className="relative overflow-hidden space-y-4">
@@ -94,20 +95,10 @@ export const VpsServer: React.FC<{ id: string; onNavigate: (p: string, params?: 
         {!vps.nodeOnline && !blocked && <div className="relative rounded-xl bg-amber-500/10 border border-amber-500/30 px-3.5 py-2.5 text-xs text-amber-200">The host node is not responding right now, so live stats and controls are unavailable. {vps.nodeError}</div>}
       </Card>
 
-      <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
-        <aside className="hidden lg:block sticky top-36 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-2.5" aria-label="VPS navigation">
-          {[0, 1].map(g => (
-            <div key={g} className={g ? 'mt-3 pt-3 border-t border-zinc-800' : ''}>
-              <p className="px-3 pb-1.5 pt-1 text-[10px] font-mono uppercase tracking-widest text-zinc-600">{g === 0 ? 'Management' : 'Configuration'}</p>
-              {tabs.filter(t => t.group === g).map(t => { const I = t.icon; const on = activeTab === t.id; return (
-                <button key={t.id} onClick={() => go(t.id)} aria-current={on ? 'page' : undefined} className={cx('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors text-left', on ? 'bg-amber-500/10 text-amber-300' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100')}><I className="h-4 w-4 shrink-0" />{t.label}</button>); })}
-            </div>))}
-        </aside>
-        <div className="lg:hidden -mx-4 sm:mx-0 border-y sm:border sm:rounded-2xl border-zinc-800 bg-zinc-900/60 overflow-x-auto no-scrollbar sticky top-[8.25rem] z-20 backdrop-blur" role="tablist">
-          <div className="flex min-w-max">{tabs.map(t => { const I = t.icon; const on = activeTab === t.id; return (
-            <button key={t.id} role="tab" aria-selected={on} onClick={() => go(t.id)} className={cx('flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors', on ? 'border-amber-400 text-amber-300' : 'border-transparent text-zinc-500 hover:text-zinc-200')}><I className="h-3.5 w-3.5" />{t.short}</button>); })}</div>
-        </div>
-        <main className="min-w-0 lg:col-start-2 lg:row-start-1">
+      <div className="min-w-0">
+        {/* The server's tabs are published to the site sidebar, which is the main navigation (no second nav inside the page). */}
+        <ScopedNavRegister nav={{ key: `vps:${id}`, title: vps.name, subtitle: 'VPS', backLabel: 'My VPS', backPage: 'vps-list', active: activeTab, onSelect: tid => go(tid as Tab), groups: [{ title: 'Management', items: tabs.filter(t => t.group === 0).map(t => ({ id: t.id, label: t.label, icon: t.icon })) }, { title: 'Configuration', items: tabs.filter(t => t.group === 1).map(t => ({ id: t.id, label: t.label, icon: t.icon })) }].filter(g => g.items.length) }} />
+        <main className="min-w-0">
           {activeTab === 'overview' && <OverviewTab d={d} running={running} />}
           {activeTab === 'console' && <ConsoleTab id={id} running={running} blocked={blocked} allowTerminal={settings.allowTerminal} />}
           {activeTab === 'files' && <FilesTab id={id} running={running} blocked={blocked} notify={say} />}

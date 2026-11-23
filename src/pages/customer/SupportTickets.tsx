@@ -84,7 +84,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ onNavigate }) =>
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
@@ -95,7 +95,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ onNavigate }) =>
 
         <button
           onClick={() => setShowNewTicketModal(true)}
-          className={`px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-gradient-to-r ${accentClasses.gradient} shadow-md flex items-center gap-2 hover:opacity-95 transition-all`}
+          className={`px-5 py-2.5 rounded-xl font-semibold text-xs text-zinc-950 bg-gradient-to-r ${accentClasses.gradient} shadow-md flex items-center gap-2 hover:opacity-95 transition-all`}
         >
           <PlusCircle className="h-4 w-4" /> Create Support Ticket
         </button>
@@ -119,7 +119,7 @@ export const SupportTickets: React.FC<SupportTicketsProps> = ({ onNavigate }) =>
                 onClick={() => setSelectedTicket(t)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
                   selectedTicket?.id === t.id
-                    ? 'bg-zinc-800/80 border-violet-500 shadow-lg shadow-violet-500/10'
+                    ? 'bg-zinc-800/80 border-violet-500 shadow-lg'
                     : 'bg-zinc-900 border-zinc-800 hover:border-zinc-700'
                 }`}
               >

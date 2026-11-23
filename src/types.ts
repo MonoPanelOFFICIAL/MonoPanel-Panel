@@ -840,7 +840,7 @@ export interface AuthProviderSettings {
 
 export interface CustomThemeSettings {
   activeThemeId: 'golden' | 'emerald' | 'cyberpunk' | 'midnight' | 'crimson' | 'amber' | 'sapphire' | 'custom';
-  activeFontId: 'Quicksand' | 'Chakra Petch' | 'Outfit' | 'Inter' | 'Space Grotesk' | 'Plus Jakarta Sans' | 'JetBrains Mono' | 'Poppins' | 'Syne' | 'Fira Code';
+  activeFontId: 'Space Grotesk Variable' | 'Quicksand' | 'Chakra Petch' | 'Outfit' | 'Inter' | 'Space Grotesk' | 'Plus Jakarta Sans' | 'JetBrains Mono' | 'Poppins' | 'Syne' | 'Fira Code';
   accentColor?: string;
   customColors?: {
     accent: string;

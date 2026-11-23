@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Bot, ShieldCheck, ArrowRight, CheckCircle2, Server, Users,
+  Bot, ShieldCheck, ArrowRight, ArrowDown, ArrowUpRight, Users, BookOpen,
   Headphones, Gauge, Lock, RotateCw, ChevronDown,
-  Terminal, Database, UserPlus, CreditCard, Play, Cpu, Star
+  Terminal, Database, UserPlus, CreditCard, Play, Cpu
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useBranding } from '../../lib/BrandingContext';
+import { useAuth } from '../../lib/AuthContext';
 import { apiRequest } from '../../lib/api';
 import { Plan, Product } from '../../types';
 import { HOSTING_KINDS, HostingKind } from '../../hostingKinds';
 import { KindIcon } from '../../components/panel/KindIcon';
-import { HeroSlider } from '../../components/HeroSlider';
-import { Reveal, ScrollProgress, useHeroScroll, useScrollingFlag, useSmoothWheel } from '../../components/animation/ScrollFx';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -104,63 +102,13 @@ const TESTIMONIALS = [
   { name: 'Hana W.', role: 'Student & hobbyist', quote: 'Started on the free plan to learn, upgraded when my project grew. The upgrade was instant and nothing had to be re-deployed.' }
 ];
 
-interface ProductCardProps {
-  kind: HostingKind;
-  title: string;
-  price: number;
-  features: string[];
-  cta: string;
-  page: string;
-  onNavigate: (page: string) => void;
-}
-
-// Module-level on purpose: a component declared inside Home gets a new identity every render and remounts.
-const ProductCard: React.FC<ProductCardProps> = ({ kind, title, price, features, cta, page, onNavigate }) => (
-  <div className="h-full rounded-3xl border border-zinc-300 bg-white p-8 sm:p-10 lg:p-12 flex flex-col justify-between shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-    <div className="space-y-8">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-950 text-white">
-        <KindIcon kind={kind} className="h-8 w-8" />
-      </div>
-      <div>
-        <h3 className="text-2xl sm:text-3xl font-bold text-zinc-950 font-display">{title}</h3>
-        <p className="text-sm text-zinc-500 mt-2">Starting at</p>
-        <p className="text-5xl sm:text-6xl font-bold text-zinc-950 font-display tracking-tight">
-          ${price.toFixed(2)}<span className="text-base font-medium text-zinc-500 tracking-normal">/month</span>
-        </p>
-      </div>
-      <ul className="space-y-3.5 text-sm sm:text-base text-zinc-700">
-        {features.map((f, i) => (
-          <li key={i} className="flex items-start gap-3">
-            <CheckCircle2 className="h-5 w-5 text-zinc-950 shrink-0 mt-0.5" />
-            <span>{f}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-    <button
-      onClick={() => onNavigate(page)}
-      className="w-full py-4 rounded-2xl font-semibold text-base bg-zinc-950 text-white hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 mt-10"
-    >
-      {cta} <ArrowRight className="h-5 w-5" />
-    </button>
-  </div>
-);
-
 export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
-  const { pageAnimationsEnabled, brandName, socialLinks, discordUrl, enabledHostings } = useBranding();
+  const { brandName, socialLinks, discordUrl, enabledHostings } = useBranding();
+  const { user } = useAuth();
   const joinUrl = socialLinks?.discord || discordUrl;
   const [plans, setPlans] = useState<Plan[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mediaQuery.addEventListener('change', handler);
-    return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
 
   useEffect(() => {
     const loadPlans = async () => {
@@ -194,12 +142,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     if (k && (!cheapest[k] || p.priceMonthly < cheapest[k]!.priceMonthly)) cheapest[k] = p;
   }
   const kindPrice = (k: HostingKind) => cheapest[k]?.priceMonthly ?? FALLBACK_PRICE[k];
-  const kindFeatures = (k: HostingKind) => (cheapest[k]?.features?.length ? cheapest[k]!.features : FEATURES_FALLBACK[k]).slice(0, 5);
-  const prices: Partial<Record<HostingKind, number>> = {};
-  for (const k of enabledHostings) prices[k] = kindPrice(k);
+  const kindFeatures = (k: HostingKind) => (cheapest[k]?.features?.length ? cheapest[k]!.features : FEATURES_FALLBACK[k]).slice(0, 4);
 
   const shownKinds = HOSTING_KINDS.filter(k => enabledHostings.includes(k.id));
-  const tickerItems = ['99.99% UPTIME SLA', ...shownKinds.flatMap(k => KIND_TICKER[k.id]), 'REAL HUMAN SUPPORT', 'FREE MIGRATION ASSISTANCE'];
   const faqs = FAQS.filter(f => !f.kinds || f.kinds.some(k => enabledHostings.includes(k)));
   const kindWords = shownKinds.map(k => k.short);
   const orList = kindWords.length <= 1 ? (kindWords[0] || 'hosting') : kindWords.slice(0, -1).join(', ') + ' or ' + kindWords[kindWords.length - 1];
@@ -211,282 +156,239 @@ export const Home: React.FC<HomeProps> = ({ onNavigate }) => {
     hasVps ? `a VPS gives you full root access with any OS image` : ''
   ].filter(Boolean).join(', and ') + '.';
 
-  const animate = pageAnimationsEnabled && !prefersReducedMotion;
+  const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const pad = (s: string, n: number) => s + ' '.repeat(Math.max(1, n - s.length));
 
-  // scroll-driven effects: hero parallax (+ pause its animations off-screen), inertial wheel scrolling
-  const heroRef = useRef<HTMLDivElement>(null);
-  const heroLayerRef = useRef<HTMLDivElement>(null);
-  useHeroScroll(heroRef, heroLayerRef, animate);
-  useScrollingFlag(animate);
-  useSmoothWheel(animate);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.05 } }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 120, damping: 18, mass: 0.8 } }
-  };
-
-  const motionDivProps = animate ? { variants: containerVariants, initial: 'hidden', animate: 'visible' } : {};
-  const motionChildProps = animate ? { variants: itemVariants } : {};
-
-  const sectionWrap = 'mx-auto max-w-6xl px-4 sm:px-6 lg:px-8';
-  const eyebrow = 'text-sm font-semibold text-zinc-500';
+  const infra = [
+    { icon: RotateCw, label: 'Auto-restart on crash', text: 'A process watchdog brings your service back after a crash.' },
+    { icon: ShieldCheck, label: 'Uptime monitoring', text: 'Live status for every node, with incidents on the status page.' },
+    { icon: Database, label: 'Routine backups', text: 'One-click backups and restores from the panel.' },
+    ...(hasVps ? [{ icon: Lock, label: 'Full root access', text: 'SSH into your VPS and run anything you like.' }] : []),
+    ...(hasRuntimes ? [{ icon: Terminal, label: 'Multi-runtime apps', text: 'Node.js, Python, Bun and Go with a live console.' }] : []),
+    { icon: Headphones, label: 'Real human support', text: 'Tickets are answered by people, not bots.' },
+  ];
 
   return (
-    <motion.div {...motionDivProps} className="relative isolate">
+    <div className="hub-content !max-w-none !p-0" style={{ padding: 0, maxWidth: 'none' }}>
+      {/* ================= HERO ================= */}
+      <div className="hero-viewport" id="start" style={{ minHeight: 'calc(100svh - 80px)' }}>
+        <div className="hero-bg" aria-hidden="true">
+          <img src="/assets/logo.svg" alt="" width={320} height={239} loading="eager" />
+        </div>
+        <div className="hero-layout">
+          <section className="hub-hero">
+            <div>
+              <p className="hub-overline">
+                {shownKinds.map(k => k.short).join(' · ') || 'Hosting'}
+                <span className="stable-badge">99.99% uptime</span>
+              </p>
+              <h1>Hosting that stays<br />online, {brandName}.</h1>
+              <p className="hub-lede">
+                Reliable {orList} hosting on high-clock hardware and enterprise NVMe storage, with real human support, free migration help and a panel that gets out of your way.
+              </p>
+              <div className="hub-actions">
+                {user ? (
+                  <button type="button" className="btn-primary" onClick={() => onNavigate('servers')}>My servers <ArrowRight width={16} height={16} aria-hidden="true" /></button>
+                ) : (
+                  <button type="button" className="btn-primary" onClick={() => onNavigate('register')}>Create free account <ArrowRight width={16} height={16} aria-hidden="true" /></button>
+                )}
+                <button type="button" className="btn-secondary" onClick={() => onNavigate('pricing')}>Browse plans <CreditCard width={14} height={14} aria-hidden="true" /></button>
+                <button type="button" className="btn-secondary" onClick={() => scrollTo('products')}>Products <ArrowDown width={14} height={14} aria-hidden="true" /></button>
+                {joinUrl && (
+                  <a href={joinUrl} className="btn-secondary" target="_blank" rel="noopener noreferrer">Discord <ArrowUpRight width={14} height={14} aria-hidden="true" /></a>
+                )}
+              </div>
+            </div>
+          </section>
 
-      {/* ================= HERO (auto-rotating: Bot Hosting <-> VPS Hosting) ================= */}
-      <div ref={heroRef} className="hero-wrap">
-        <div ref={heroLayerRef} className="hero-layer">
-          <HeroSlider prices={prices} enabled={enabledHostings} autoplay={animate} onNavigate={onNavigate} />
+          <div className="hero-terminal" aria-label="What we host">
+            <div className="hero-terminal-bar"><span></span><span></span><span></span><em>services</em></div>
+<pre><code>{`${brandName.toLowerCase()} ──▶ services
+`}{shownKinds.map((k, i) => `${i === shownKinds.length - 1 ? ' └─' : ' ├─'} ${pad(k.short, 9)} from $${kindPrice(k.id).toFixed(2)}/mo\n`).join('')}{`
+ uptime    99.99% SLA
+ support   real humans, 24/7
+ backups   one click`}</code></pre>
+          </div>
         </div>
       </div>
 
-      {/* ================= TICKER ================= */}
-      <motion.div {...motionChildProps} className="-mx-4 lg:-mx-6 border-y border-zinc-800 bg-zinc-950 overflow-hidden">
-        <div className={`flex w-max whitespace-nowrap py-4 text-xs sm:text-sm font-bold tracking-widest text-zinc-400 font-mono ${animate ? 'animate-marquee' : ''}`}>
-          {[...tickerItems, ...tickerItems].map((item, i) => (
-            <span key={i} className="flex items-center">
-              <span className="px-6">{item}</span>
-              <span className="text-zinc-700">•</span>
-            </span>
+      {/* ================= PRODUCTS ================= */}
+      <section className="hub-section" id="products">
+        <div>
+          <div className="hub-section-heading">
+            <h2>Our products</h2>
+            <p>{shownKinds.length === 1 ? 'One product, done properly' : `${shownKinds.length} products, done properly`} — no confusing tiers, no filler hosting types.</p>
+          </div>
+        </div>
+        <div className="project-cards">
+          {shownKinds.map((k, i) => (
+            <div key={k.id} className="h-full">
+              <button type="button" className="project-card h-full w-full" style={{ textAlign: 'left', cursor: 'pointer' }} onClick={() => onNavigate(k.publicPage)}>
+                <div className="project-card-header">
+                  <div className="project-mark" style={{ color: 'var(--color-bg)' }}><KindIcon kind={k.id} className="h-5 w-5" /></div>
+                  <span className="project-link-badge">Learn more <ArrowUpRight width={12} height={12} aria-hidden="true" /></span>
+                </div>
+                <h3>{k.label}</h3>
+                <p>{k.tagline}. From <strong>${kindPrice(k.id).toFixed(2)}</strong>/month.</p>
+                <div className="project-tags">
+                  {kindFeatures(k.id).map(f => <span key={f} className="tag">{f}</span>)}
+                </div>
+              </button>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </section>
 
-      {/* ================= LIGHT SECTION (Products + How it works + Stats merged) ================= */}
-      <motion.section {...motionChildProps} className="-mx-4 lg:-mx-6 bg-zinc-100">
-        <div className={`${sectionWrap} py-24 sm:py-32 lg:py-40 space-y-24 sm:space-y-32`}>
+      {/* ================= HOW IT WORKS ================= */}
+      <section className="hub-section" id="how">
+        <div>
+          <div className="hub-section-heading">
+            <h2>Live in three steps</h2>
+            <p>From sign-up to a running service, without the back-and-forth.</p>
+          </div>
+        </div>
+        <div className="about-grid">
+          {[
+            { icon: UserPlus, title: 'Create a free account', text: 'Sign up in a minute and open your dashboard. No card needed to look around.' },
+            { icon: CreditCard, title: 'Pick a plan and pay', text: `Choose ${orList} hosting and pay with the methods shown at checkout, like UPI, bank transfer or gift card.` },
+            { icon: Play, title: 'Deploy from your dashboard', text: 'Once payment is verified, your credentials land in the dashboard and you can go live.' }
+          ].map(({ icon: Icon, title, text }, i) => (
+            <div key={title} className="about-card" style={{ cursor: 'default' }}>
+              <div className="about-card-icon"><Icon width={20} height={20} aria-hidden="true" /></div>
+              <h3>{i + 1}. {title}</h3>
+              <p>{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-          {/* Products */}
+      {/* ================= INFRASTRUCTURE ================= */}
+      <section className="hub-section" id="infrastructure">
+        <div>
+          <div className="hub-section-heading">
+            <h2>Built for uptime</h2>
+            <p>{brandName} keeps your services running with process watchdogs, routine backups, uptime monitoring and a team that answers tickets.</p>
+          </div>
+        </div>
+        <div className="mp-feature-grid">
+          {infra.map(({ icon: Icon, label, text }) => (
+            <div key={label} className="feature-grid-item" style={{ cursor: 'default' }}>
+              <div className="feature-grid-item-header"><Icon width={18} height={18} aria-hidden="true" /></div>
+              <h4>{label}</h4>
+              <p>{text}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mp-feature-grid" style={{ marginTop: 12 }}>
+          {[
+            { icon: Gauge, value: '99.99%', label: 'Uptime SLA' },
+            { icon: Headphones, value: '24/7', label: 'Process watchdog' },
+            { icon: Bot, value: String(shownKinds.length), label: shownKinds.length === 1 ? 'Focused product' : 'Focused products' },
+            { icon: Users, value: 'Human', label: 'Support, not bots' }
+          ].map(({ icon: Icon, value, label }) => (
+            <div key={label} className="feature-grid-item" style={{ cursor: 'default' }}>
+              <div className="feature-grid-item-header"><Icon width={18} height={18} aria-hidden="true" /></div>
+              <h4 style={{ fontSize: 28, letterSpacing: '-0.04em' }}>{value}</h4>
+              <p>{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ================= RUNTIMES ================= */}
+      {hasRuntimes && (
+        <section className="hub-section" id="runtimes">
           <div>
-            <Reveal className="max-w-2xl mb-12 sm:mb-16 space-y-3">
-              <span className={eyebrow}>Purchase</span>
-              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-zinc-950 font-display">Our Products</h2>
-              <p className="text-base sm:text-lg text-zinc-600">
-                {shownKinds.length === 1 ? 'One product, done properly' : `${shownKinds.length} products, done properly`} — no confusing tiers, no filler hosting types.
-              </p>
-            </Reveal>
-            <div className={`grid grid-cols-1 gap-6 sm:gap-8 ${shownKinds.length === 1 ? 'max-w-xl' : shownKinds.length === 2 ? 'lg:grid-cols-2' : 'md:grid-cols-2 xl:grid-cols-3'}`}>
-              {shownKinds.map((k, i) => (
-                <Reveal key={k.id} className="h-full" delay={(i % 3) * 0.15} speed={0.5 + (i % 2) * 0.5}>
-                  <ProductCard kind={k.id} title={k.label} price={kindPrice(k.id)} features={kindFeatures(k.id)} cta="Learn More" page={k.publicPage} onNavigate={onNavigate} />
-                </Reveal>
-              ))}
+            <div className="hub-section-heading">
+              <h2>Run what you already build</h2>
+              <p>Bring your project as it is. {runtimeBlurb}</p>
             </div>
           </div>
-
-          {/* How it works — a genuine sequence */}
-          <div className="border-t border-zinc-300 pt-20 sm:pt-28">
-            <Reveal className="max-w-2xl mb-12 sm:mb-16 space-y-3">
-              <span className={eyebrow}>How it works</span>
-              <h2 className="text-3xl sm:text-5xl font-bold text-zinc-950 font-display">Live in three steps</h2>
-              <p className="text-base sm:text-lg text-zinc-600">From sign-up to a running service, without the back-and-forth.</p>
-            </Reveal>
-            <ol className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-              {[
-                { icon: UserPlus, title: 'Create a free account', text: 'Sign up in a minute and open your dashboard — no card needed to look around.' },
-                { icon: CreditCard, title: 'Pick a plan and pay', text: `Choose ${orList} hosting and pay with the methods shown at checkout, like UPI, bank transfer or gift card.` },
-                { icon: Play, title: 'Deploy from your dashboard', text: 'Once payment is verified, your credentials land in the dashboard and you can go live.' }
-              ].map(({ icon: Icon, title, text }, i) => (
-                <Reveal as="li" delay={i * 0.14} key={title} className="rounded-3xl bg-white border border-zinc-300 p-8 sm:p-10 space-y-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-950 text-white">
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <span className="font-display text-5xl font-bold text-zinc-300">{i + 1}</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-zinc-950 font-display">{title}</h3>
-                  <p className="text-sm sm:text-base text-zinc-600 leading-relaxed">{text}</p>
-                </Reveal>
-              ))}
-            </ol>
-          </div>
-
-          {/* Stats */}
-          <div className="border-t border-zinc-300 pt-20 sm:pt-28 text-center">
-            <Reveal><h2 className="text-3xl sm:text-5xl font-bold text-zinc-950 font-display">
-              Built for developers and server owners
-            </h2>
-            <p className="text-base sm:text-lg text-zinc-600 mt-4 max-w-2xl mx-auto">
-              Straightforward hosting, transparent pricing, and a team that actually answers tickets.
-            </p></Reveal>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-10 mt-14">
-              {[
-                { icon: Gauge, value: '99.99%', label: 'Uptime SLA' },
-                { icon: Headphones, value: '24/7', label: 'Process watchdog' },
-                { icon: Bot, value: String(shownKinds.length), label: shownKinds.length === 1 ? 'Focused product' : 'Focused products' },
-                { icon: Users, value: 'Human', label: 'Support, not bots' }
-              ].map(({ icon: Icon, value, label }, i) => (
-                <Reveal key={label} delay={i * 0.1} speed={0.35 + (i % 2) * 0.5} className="p-4">
-                  <Icon className="h-7 w-7 text-zinc-950 mx-auto mb-4" />
-                  <div className="text-4xl sm:text-6xl font-bold text-zinc-950 font-display tracking-tight">{value}</div>
-                  <div className="text-sm sm:text-base text-zinc-600 mt-2">{label}</div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ================= DARK SECTION (Infrastructure + Runtimes + FAQ + CTA merged) ================= */}
-      <motion.section {...motionChildProps} className="-mx-4 lg:-mx-6 bg-black">
-        <div className={`${sectionWrap} py-24 sm:py-32 lg:py-40 space-y-24 sm:space-y-32`}>
-
-          {/* Infrastructure */}
-          <div className="text-center">
-            <span className={eyebrow}>Infrastructure</span>
-            <h2 className={`text-4xl sm:text-5xl lg:text-6xl font-bold font-display mt-3 leading-tight ${animate ? 'mono-heading-shimmer' : 'text-white'}`}>
-              Built for Uptime
-            </h2>
-            <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto mt-5 leading-relaxed">
-              {brandName} keeps your services running with process watchdogs, routine backups, uptime monitoring, and a team that answers tickets.
-            </p>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-14">
-              {[
-                { icon: RotateCw, label: 'Auto-restart on crash' },
-                { icon: ShieldCheck, label: 'Uptime monitoring' },
-                { icon: Database, label: 'Routine backups' },
-                ...(hasVps ? [{ icon: Lock, label: 'Full root access' }] : []),
-                ...(hasRuntimes ? [{ icon: Terminal, label: 'Multi-runtime apps' }] : []),
-                { icon: Headphones, label: 'Real human support' }
-              ].map(({ icon: Icon, label }, i) => (
-                <Reveal key={label} delay={(i % 3) * 0.1} speed={0.25 + (i % 3) * 0.3} className="rounded-3xl"><div className="h-full p-8 sm:p-10 rounded-3xl bg-zinc-900/60 border border-zinc-800 flex flex-col items-center gap-4 text-center hover:border-zinc-600 transition-colors">
-                  <Icon className="h-8 w-8 text-white" />
-                  <span className="text-base sm:text-lg font-semibold text-zinc-200 leading-snug">{label}</span>
-                </div></Reveal>
-              ))}
-            </div>
-          </div>
-
-          {/* Runtimes */}
-          {hasRuntimes && (
-          <div className="border-t border-zinc-800 pt-20 sm:pt-28 grid lg:grid-cols-[1fr_1.3fr] gap-12 lg:gap-20 items-center">
-            <div className="space-y-4">
-              <span className={eyebrow}>Runtimes</span>
-              <h2 className="text-3xl sm:text-5xl font-bold text-white font-display">Run what you already build</h2>
-              <p className="text-base sm:text-lg text-zinc-400 leading-relaxed">
-                Bring your project as it is. {runtimeBlurb}
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:gap-5">
-              {[
-                { name: 'Node.js', note: 'v18 – v22' },
-                { name: 'Python', note: '3.9 – 3.12' },
-                { name: 'Bun', note: 'Fast JS runtime' },
-                { name: 'Go', note: 'Compiled binaries' }
-              ].map(r => (
-                <div key={r.name} className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-6 sm:p-8 flex items-center gap-4">
-                  <div className="h-12 w-12 shrink-0 rounded-xl bg-white text-zinc-950 flex items-center justify-center">
-                    <Cpu className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="text-lg sm:text-xl font-bold text-white font-display">{r.name}</div>
-                    <div className="text-sm text-zinc-400">{r.note}</div>
-                  </div>
+          <div className="project-cards">
+            {[
+              { name: 'Node.js', note: 'v18 – v22' },
+              { name: 'Python', note: '3.9 – 3.12' },
+              { name: 'Bun', note: 'Fast JS runtime' },
+              { name: 'Go', note: 'Compiled binaries' }
+            ].map(r => (
+              <div key={r.name} className="project-card" style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                <div className="project-mark" style={{ color: 'var(--color-bg)' }}><Cpu className="h-5 w-5" aria-hidden="true" /></div>
+                <div>
+                  <h3 style={{ margin: 0 }}>{r.name}</h3>
+                  <p style={{ margin: 0 }}>{r.note}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-          )}
-
-          {/* Testimonials */}
-          <div className="border-t border-zinc-800 pt-20 sm:pt-28">
-            <div className="text-center mb-12 space-y-3">
-              <span className={eyebrow}>Testimonials</span>
-              <h2 className="text-3xl sm:text-5xl font-bold text-white font-display">Loved by people who ship</h2>
-              <div className="flex items-center justify-center gap-2 text-sm text-zinc-400" aria-label="Rated 5 out of 5 stars">
-                <span className="flex gap-0.5">{[0, 1, 2, 3, 4].map(n => <Star key={n} className="h-5 w-5 fill-amber-400 text-amber-400" aria-hidden="true" />)}</span>
-                <span className="font-semibold text-white">5.0</span><span>from our community</span>
               </div>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {TESTIMONIALS.map((t, i) => (
-                <Reveal key={t.name} delay={(i % 3) * 0.1} className="h-full">
-                  <figure className="h-full rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6 sm:p-7 flex flex-col gap-5">
-                    <div className="flex gap-0.5" aria-label="5 out of 5 stars">{[0, 1, 2, 3, 4].map(n => <Star key={n} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden="true" />)}</div>
-                    <blockquote className="text-sm sm:text-base text-zinc-300 leading-relaxed flex-1">“{t.quote}”</blockquote>
-                    <figcaption className="flex items-center gap-3">
-                      <span className="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 text-white font-bold flex items-center justify-center text-sm" aria-hidden="true">{t.name[0]}</span>
-                      <span><span className="block text-sm font-semibold text-white">{t.name}</span><span className="block text-xs text-zinc-500">{t.role}</span></span>
-                    </figcaption>
-                  </figure>
-                </Reveal>
-              ))}
-            </div>
+            ))}
           </div>
+        </section>
+      )}
 
-          {/* FAQ */}
-          <div id="faq" className="border-t border-zinc-800 pt-20 sm:pt-28">
-            <div className="mx-auto max-w-3xl">
-              <div className="text-center mb-12 space-y-3">
-                <span className={eyebrow}>Support</span>
-                <h2 className={`text-3xl sm:text-5xl font-bold font-display ${animate ? 'mono-heading-shimmer' : 'text-white'}`}>Frequently Asked Questions</h2>
-              </div>
-              <div className="space-y-3.5">
-                {faqs.map((item, i) => {
-                  const isOpen = openFaq === i;
-                  return (
-                    <div key={i} className="rounded-3xl border border-zinc-800 bg-zinc-900/40 overflow-hidden">
-                      <button
-                        onClick={() => setOpenFaq(isOpen ? null : i)}
-                        className="w-full flex items-center justify-between gap-4 p-6 sm:p-7 text-left"
-                        aria-expanded={isOpen}
-                      >
-                        <span className="text-base sm:text-lg font-semibold text-white">{item.q}</span>
-                        <ChevronDown className={`h-5 w-5 text-zinc-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {isOpen && (
-                        <div className="px-6 sm:px-7 pb-6 sm:pb-7 -mt-2">
-                          <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">{item.a}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Final CTA */}
-          <div className="rounded-[2rem] bg-white p-10 sm:p-16 lg:p-20 text-center space-y-6 shadow-2xl">
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-zinc-950 font-display">Ready to launch?</h2>
-            <p className="text-zinc-600 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-              Create a free account and deploy your first service in minutes. Free migration assistance available.
-            </p>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-3">
-              <button
-                onClick={() => onNavigate('register')}
-                className="px-9 py-4 rounded-2xl font-semibold text-white bg-zinc-950 hover:bg-zinc-800 hover:scale-[1.01] active:scale-[0.99] transition-all text-base"
-              >
-                Create Free Account
-              </button>
-              <button
-                onClick={() => onNavigate('pricing')}
-                className="px-9 py-4 rounded-2xl font-semibold text-zinc-700 bg-zinc-100 border border-zinc-300 hover:bg-zinc-200 hover:scale-[1.01] active:scale-[0.99] transition-all text-base"
-              >
-                Browse All Plans
-              </button>
-              {joinUrl && (
-                <a
-                  href={joinUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="px-9 py-4 rounded-2xl font-semibold text-zinc-950 bg-emerald-500 hover:bg-emerald-400 transition-colors text-base text-center"
-                >
-                  Join our Discord
-                </a>
-              )}
-            </div>
+      {/* ================= TESTIMONIALS ================= */}
+      <section className="hub-section" id="testimonials">
+        <div>
+          <div className="hub-section-heading">
+            <h2>Loved by people who ship</h2>
+            <p>5.0 average from our community.</p>
           </div>
         </div>
-      </motion.section>
+        <div className="project-cards">
+          {TESTIMONIALS.map((t, i) => (
+            <div key={t.name} className="h-full">
+              <figure className="project-card h-full" style={{ margin: 0 }}>
+                <blockquote style={{ margin: 0, color: 'var(--color-text-2)', fontSize: 14, lineHeight: 1.65, flex: 1 }}>“{t.quote}”</blockquote>
+                <figcaption className="project-card-header" style={{ marginTop: 6 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="project-mark" style={{ color: 'var(--color-bg)', fontWeight: 700 }} aria-hidden="true">{t.name[0]}</span>
+                    <span><span style={{ display: 'block', fontSize: 14, fontWeight: 600 }}>{t.name}</span><span style={{ display: 'block', fontSize: 12, color: 'var(--color-text-3)' }}>{t.role}</span></span>
+                  </span>
+                </figcaption>
+              </figure>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      {animate && <ScrollProgress />}
-    </motion.div>
+      {/* ================= FAQ ================= */}
+      <section className="hub-section" id="faq">
+        <div>
+          <div className="hub-section-heading">
+            <h2>Frequently asked questions</h2>
+            <p>Can't find your answer? Open a support ticket from your dashboard.</p>
+          </div>
+        </div>
+        <div className="addon-list" style={{ maxWidth: 820 }}>
+          {faqs.map((item, i) => {
+            const isOpen = openFaq === i;
+            return (
+              <div key={i} style={{ borderTop: i ? '1px solid var(--color-border)' : 0 }}>
+                <button type="button" onClick={() => setOpenFaq(isOpen ? null : i)} aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-text-1 hover:bg-bg-hover transition-colors">
+                  <span>{item.q}</span>
+                  <ChevronDown className={`h-4 w-4 text-text-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                </button>
+                {isOpen && <p className="px-5 pb-5 -mt-1 text-sm text-text-2 leading-relaxed">{item.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ================= CTA ================= */}
+      <section className="hub-section hub-section--install" style={{ paddingBottom: 24 }}>
+        <div className="install-layout" style={{ display: 'block' }}>
+          <div className="hub-section-heading">
+            <h2>Ready to launch?</h2>
+            <p>Create a free account and deploy your first service in minutes. Free migration assistance available.</p>
+          </div>
+          <div className="hub-actions" style={{ marginTop: 0 }}>
+            <button type="button" className="btn-primary" onClick={() => onNavigate(user ? 'servers' : 'register')}>{user ? 'Open my servers' : 'Create free account'} <ArrowRight width={16} height={16} aria-hidden="true" /></button>
+            <button type="button" className="btn-secondary" onClick={() => onNavigate('pricing')}>Browse all plans</button>
+            <button type="button" className="btn-secondary" onClick={() => onNavigate('docs')}>Read the docs <BookOpen width={14} height={14} aria-hidden="true" /></button>
+            {joinUrl && <a href={joinUrl} className="btn-secondary" target="_blank" rel="noopener noreferrer">Join our Discord <ArrowUpRight width={14} height={14} aria-hidden="true" /></a>}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 };

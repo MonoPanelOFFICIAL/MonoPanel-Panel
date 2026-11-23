@@ -118,7 +118,7 @@ export const AdminBilling: React.FC = () => {
   const isDeposit = (o: Order) => o.planId === 'credit_deposit';
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
 
       {/* Header */}
       <div className="border-b border-amber-500/20 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

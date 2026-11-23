@@ -47,11 +47,11 @@ export const Docs: React.FC = () => {
                   onClick={() => setActiveTab(cat.id as DocSection)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                     activeTab === cat.id
-                      ? 'bg-violet-600/10 text-violet-400 border border-violet-600/20 shadow-[0_0_20px_-5px_rgba(139,92,246,0.1)]'
+                      ? 'bg-text-1 text-bg border border-text-1 font-semibold'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50 border border-transparent'
                   }`}
                 >
-                  <cat.icon className={`h-4 w-4 ${activeTab === cat.id ? 'text-violet-400' : 'text-zinc-500'}`} />
+                  <cat.icon className={`h-4 w-4 ${activeTab === cat.id ? 'text-bg' : 'text-zinc-500'}`} />
                   {cat.name}
                 </button>
               ))}

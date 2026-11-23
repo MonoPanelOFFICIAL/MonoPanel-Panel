@@ -20,7 +20,7 @@ export const AdminAuditLogs: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="border-b border-amber-500/20 pb-5">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
           <FileText className="h-6 w-6 text-amber-400" /> Platform Security Audit Trail

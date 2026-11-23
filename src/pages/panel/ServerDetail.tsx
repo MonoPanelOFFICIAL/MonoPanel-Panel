@@ -20,6 +20,7 @@ import { LavalinkTab } from './server/LavalinkTab';
 import { NodeTab } from './server/NodeTab';
 import { SiteTab } from './server/SiteTab';
 import { kindInfo } from '../../hostingKinds';
+import { ScopedNavRegister } from '../../lib/navStore';
 
 type Tab = 'console' | 'activity' | 'files' | 'databases' | 'schedules' | 'team' | 'backups' | 'startup' | 'settings' | 'addons' | 'lavalink' | 'project' | 'domains';
 
@@ -87,7 +88,7 @@ export const ServerDetail: React.FC<{ id: string; onNavigate: (p: string, params
       {toast}
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-zinc-500">
         <button onClick={() => onNavigate(kindPage)} className="flex items-center gap-1.5 hover:text-zinc-200"><ArrowLeft className="h-3.5 w-3.5" />{kindLabel}</button><span className="text-zinc-700">/</span><span className="text-zinc-300 font-semibold truncate">{server.name}</span>
-        <span className="ml-auto font-mono text-[10px] text-zinc-600 hidden sm:block">ID: {server.id.slice(0, 8)}</span>
+        <span className="ml-auto font-mono text-[10px] text-zinc-600 hidden sm:block">ID: {server.id}</span>
       </nav>
 
       <Card className="relative overflow-hidden space-y-4">
@@ -122,26 +123,10 @@ export const ServerDetail: React.FC<{ id: string; onNavigate: (p: string, params
         {server.status === 'install_failed' && <div className="relative rounded-xl bg-red-500/10 border border-red-500/30 px-3.5 py-2.5 text-xs text-red-200"><b>Installation failed.</b>{server.installLog?.length ? <pre className="mt-2 text-[10px] font-mono text-red-300/80 whitespace-pre-wrap">{server.installLog.slice(-6).join('\n')}</pre> : null} Open Settings and choose Reinstall Server, or contact support.</div>}
       </Card>
 
-      <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-4 items-start">
-        {/* Desktop: management sidebar */}
-        <aside className="hidden lg:block sticky top-36 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-2.5" aria-label="Server navigation">
-          {[0, 1].map(g => (
-            <div key={g} className={g ? 'mt-3 pt-3 border-t border-zinc-800' : ''}>
-              <p className="px-3 pb-1.5 pt-1 text-[10px] font-mono uppercase tracking-widest text-zinc-600">{g === 0 ? 'Management' : 'Configuration'}</p>
-              {tabs.filter(t => t.group === g).map(t => { const I = t.icon; const on = activeTab === t.id; return (
-                <button key={t.id} onClick={() => { setUserPicked(true); setTab(t.id); }} aria-current={on ? 'page' : undefined} className={cx('w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-colors text-left', on ? 'bg-amber-500/10 text-amber-300 border border-amber-500/25 font-semibold' : 'border border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900')}><I className="h-4 w-4 shrink-0" />{t.label}</button>); })}
-            </div>))}
-        </aside>
-
-        {/* Mobile / tablet: horizontal tab strip */}
-        <div className="lg:hidden -mx-4 sm:mx-0 border-y sm:border sm:rounded-2xl border-zinc-800 bg-zinc-900/60 overflow-x-auto no-scrollbar sticky top-[8.25rem] z-20 backdrop-blur" role="tablist">
-          <div className="flex min-w-max">
-            {tabs.map(t => { const I = t.icon; const on = activeTab === t.id; return (
-              <button key={t.id} role="tab" aria-selected={on} onClick={() => { setUserPicked(true); setTab(t.id); }} className={cx('flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-colors', on ? 'border-amber-400 text-amber-300' : 'border-transparent text-zinc-500 hover:text-zinc-200')}><I className="h-3.5 w-3.5" />{t.short}</button>); })}
-          </div>
-        </div>
-
-        <main className="min-w-0 lg:col-start-2 lg:row-start-1">
+      <div className="min-w-0">
+        {/* The server's tabs are published to the site sidebar, which is the main navigation (no second nav inside the page). */}
+        <ScopedNavRegister nav={{ key: `server:${id}`, title: server.name, subtitle: kindLabel, backLabel: kindLabel, backPage: kindPage, active: activeTab, onSelect: tid => { setUserPicked(true); setTab(tid as Tab); }, groups: [{ title: 'Management', items: tabs.filter(t => t.group === 0).map(t => ({ id: t.id, label: t.label, icon: t.icon })) }, { title: 'Configuration', items: tabs.filter(t => t.group === 1).map(t => ({ id: t.id, label: t.label, icon: t.icon })) }].filter(g => g.items.length) }} />
+        <main className="min-w-0">
           {activeTab === 'lavalink' && <LavalinkTab serverId={id} running={running} canEdit={usable && has('settings')} notify={say} />}
           {activeTab === 'domains' && <SiteTab serverId={id} canEdit={usable && has('settings')} notify={say} />}
           {activeTab === 'project' && <NodeTab serverId={id} running={running} canRun={usable && has('files.write')} website={kind === 'website'} notify={say} />}

@@ -112,7 +112,7 @@ router.get('/theme-settings', async (req: Request, res: Response) => {
   const db = await getDb();
   const defaults = {
     activeThemeId: 'golden',
-    activeFontId: 'Quicksand',
+    activeFontId: 'Space Grotesk Variable',
     cardStyle: 'rounded-2xl',
     glowIntensity: 'vibrant',
     allowUserCustomization: true,

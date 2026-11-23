@@ -51,7 +51,7 @@ export const KindHosting: React.FC<{ kind: HostingKind; onNavigate: (page: strin
               {plans.map(p => {
                 const price = yearly ? (p.priceYearly / 12).toFixed(2) : p.priceMonthly.toFixed(2);
                 return (
-                  <div key={p.id} className={`rounded-3xl p-7 bg-zinc-900/80 border flex flex-col justify-between relative ${p.isPopular ? 'border-cyan-500 shadow-xl shadow-cyan-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}>
+                  <div key={p.id} className={`rounded-3xl p-7 bg-zinc-900/80 border flex flex-col justify-between relative ${p.isPopular ? 'border-cyan-500 shadow-xl' : 'border-zinc-800 hover:border-zinc-700'}`}>
                     {p.isPopular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold bg-cyan-600 text-white uppercase tracking-wider">Most Popular</div>}
                     <div className="space-y-4">
                       <div><h3 className="text-xl font-bold text-white">{p.name}</h3>{p.description && <p className="text-xs text-zinc-500 mt-1">{p.description}</p>}

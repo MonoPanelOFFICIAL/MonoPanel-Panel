@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { Btn, Modal, TextInput, cx } from './kit';
 
-/** Extra building blocks for the server pages (dropdown menus, dialogs, checkbox). Same zinc/amber tokens as kit.tsx. */
+/** Extra building blocks for the server pages (dropdown menus, dialogs, checkbox). Same Home-style tokens as kit.tsx. */
 
 export const TabHeader: React.FC<{ title: string; subtitle: string; actions?: React.ReactNode }> = ({ title, subtitle, actions }) => (
   <div className="flex flex-wrap items-end justify-between gap-3">
     <div className="min-w-0">
-      <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{title}</h2>
-      <p className="text-xs sm:text-sm text-zinc-400 mt-1">{subtitle}</p>
+      <h2 className="text-2xl sm:text-3xl font-bold text-text-1 tracking-[-0.04em] leading-tight">{title}</h2>
+      <p className="text-xs sm:text-sm text-text-3 mt-1.5">{subtitle}</p>
     </div>
     {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
   </div>
@@ -16,8 +16,8 @@ export const TabHeader: React.FC<{ title: string; subtitle: string; actions?: Re
 
 export const Checkbox: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string; indeterminate?: boolean; className?: string }> = ({ checked, onChange, label, indeterminate, className }) => (
   <button type="button" role="checkbox" aria-checked={indeterminate ? 'mixed' : checked} aria-label={label} onClick={e => { e.stopPropagation(); onChange(!checked); }}
-    className={cx('h-[18px] w-[18px] shrink-0 rounded-[5px] border flex items-center justify-center transition-colors', checked || indeterminate ? 'bg-amber-500 border-amber-500 text-zinc-950' : 'border-zinc-600 bg-zinc-950 hover:border-zinc-400', className)}>
-    {checked && <Check className="h-3 w-3" strokeWidth={3.5} />}{!checked && indeterminate && <span className="h-0.5 w-2 bg-zinc-950 rounded" />}
+    className={cx('h-[18px] w-[18px] shrink-0 rounded-[5px] border flex items-center justify-center transition-colors', checked || indeterminate ? 'bg-text-1 border-text-1 text-bg' : 'border-zinc-600 bg-bg hover:border-text-2', className)}>
+    {checked && <Check className="h-3 w-3" strokeWidth={3.5} />}{!checked && indeterminate && <span className="h-0.5 w-2 bg-bg rounded" />}
   </button>
 );
 
@@ -42,12 +42,12 @@ export const Menu: React.FC<{ label: React.ReactNode; items: MenuEntry[]; align?
           {label}{chevron && !iconOnly && <ChevronDown className={cx('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />}
         </Btn>
         {open && (
-          <div role="menu" className={cx('absolute top-full mt-1.5 z-50 min-w-[11.5rem] rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl shadow-black/60 p-1.5', align === 'right' ? 'right-0' : 'left-0')}>
+          <div role="menu" className={cx('mp-pop absolute top-full mt-1.5 z-[200] min-w-[11.5rem]', align === 'right' ? 'right-0' : 'left-0')}>
             {items.map((it, i) => it === 'divider'
-              ? <div key={i} className="h-px bg-zinc-800 my-1" />
+              ? <div key={i} className="h-px bg-border my-1" />
               : <button key={i} role="menuitem" type="button" disabled={it.disabled} onClick={() => { setOpen(false); it.onClick(); }}
-                  className={cx('w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed', it.danger ? 'text-red-400 hover:bg-red-500/10' : 'text-zinc-200 hover:bg-zinc-800')}>
-                  {it.icon && <span className="text-zinc-500 [&>svg]:h-4 [&>svg]:w-4">{it.icon}</span>}{it.label}
+                  className={cx('w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-left transition-colors hover:bg-text-1 hover:text-bg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent', it.danger ? 'text-text-3' : 'text-text-2')}>
+                  {it.icon && <span className="opacity-70 [&>svg]:h-4 [&>svg]:w-4">{it.icon}</span>}{it.label}
                 </button>)}
           </div>
         )}
@@ -63,11 +63,11 @@ export const PromptModal: React.FC<{ open: boolean; title: string; label: string
     return (
       <Modal open={open} onClose={onClose} title={title} footer={<><Btn onClick={onClose}>Cancel</Btn><Btn variant="primary" busy={busy} disabled={!v.trim()} onClick={submit}>{confirmLabel}</Btn></>}>
         <form onSubmit={e => { e.preventDefault(); submit(); }} className="space-y-4">
-          <label className="block"><span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-1.5">{label}</span>
+          <label className="block"><span className="block text-[10px] font-mono font-semibold uppercase tracking-[0.06em] text-text-3 mb-1.5">{label}</span>
             <TextInput autoFocus type={type} value={v} placeholder={placeholder} onChange={e => setV(e.target.value)} onFocus={e => type === 'text' && e.currentTarget.select()} autoComplete="off" spellCheck={false} />
-            {hint && <span className="block text-[11px] text-zinc-500 mt-1">{hint}</span>}
+            {hint && <span className="block text-[11px] text-text-4 mt-1">{hint}</span>}
           </label>
-          {secondary && <label className="block"><span className="block text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-1.5">{secondary.label}{secondary.optional && ' (optional)'}</span>
+          {secondary && <label className="block"><span className="block text-[10px] font-mono font-semibold uppercase tracking-[0.06em] text-text-3 mb-1.5">{secondary.label}{secondary.optional && ' (optional)'}</span>
             <TextInput value={v2} placeholder={secondary.placeholder} onChange={e => setV2(e.target.value)} autoComplete="off" spellCheck={false} /></label>}
           <button type="submit" className="hidden" />
         </form>

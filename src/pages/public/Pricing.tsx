@@ -51,22 +51,13 @@ export function resolveIcon(name?: string): LucideIcon {
 
 // Full class names (not built dynamically) so Tailwind can see and generate them.
 const ACCENTS = [
-  'bg-violet-600 text-white shadow-lg shadow-violet-500/20',
-  'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20',
-  'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20',
-  'bg-amber-600 text-white shadow-lg shadow-amber-500/20',
-  'bg-rose-600 text-white shadow-lg shadow-rose-500/20',
-  'bg-sky-600 text-white shadow-lg shadow-sky-500/20'
+  'bg-text-1 text-bg font-semibold',
 ];
 
 // Keep the original look for the two built-in categories; rotate for new ones.
-function accentFor(product: PublicProduct, index: number): string {
-  if (product.category === 'bot') return ACCENTS[0];
-  if (product.category === 'vps') return ACCENTS[1];
-  if (product.category === 'website') return ACCENTS[2];
-  if (product.category === 'nodejs') return ACCENTS[3];
-  if (product.category === 'lavalink') return ACCENTS[4];
-  return ACCENTS[2 + (index % (ACCENTS.length - 2))];
+function accentFor(_product: PublicProduct, _index: number): string {
+  // Home is black and white: the selected category tab is the inverted white pill.
+  return ACCENTS[0];
 }
 
 export const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
@@ -189,7 +180,7 @@ export const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
               <div
                 key={p.id}
                 className={`rounded-3xl p-6 bg-zinc-900/80 border flex flex-col justify-between relative transition-all ${
-                  p.isPopular ? 'border-violet-500 shadow-xl shadow-violet-500/10 bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
+                  p.isPopular ? 'border-violet-500 shadow-xl bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
                 }`}
               >
                 {p.isPopular && (
@@ -239,7 +230,7 @@ export const Pricing: React.FC<PricingProps> = ({ onNavigate }) => {
                   onClick={() => onNavigate('checkout', { planId: p.id, billingCycle })}
                   className={`w-full mt-6 py-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all ${
                     p.isPopular
-                      ? `bg-gradient-to-r ${accentClasses.gradient} text-white shadow-md hover:opacity-95`
+                      ? `bg-gradient-to-r ${accentClasses.gradient} text-zinc-950 shadow-md hover:opacity-95`
                       : 'bg-zinc-800 text-white hover:bg-zinc-700'
                   }`}
                 >

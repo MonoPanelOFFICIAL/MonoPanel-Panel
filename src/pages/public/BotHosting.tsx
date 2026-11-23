@@ -79,7 +79,7 @@ export const BotHosting: React.FC<BotHostingProps> = ({ onNavigate }) => {
                 <div
                   key={p.id}
                   className={`rounded-3xl p-8 bg-zinc-900/80 border flex flex-col justify-between relative transition-all ${
-                    p.isPopular ? 'border-cyan-500 shadow-xl shadow-cyan-500/10 bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
+                    p.isPopular ? 'border-cyan-500 shadow-xl bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
                   }`}
                 >
                   {p.isPopular && (
@@ -131,7 +131,7 @@ export const BotHosting: React.FC<BotHostingProps> = ({ onNavigate }) => {
 
                   <button
                     onClick={() => onNavigate('register', { planId: p.id, productCategory: 'bot' })}
-                    className="w-full mt-8 py-3.5 rounded-xl font-semibold text-xs bg-cyan-600 hover:bg-cyan-500 text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20"
+                    className="w-full mt-8 py-3.5 rounded-xl font-semibold text-xs bg-cyan-600 hover:bg-cyan-500 text-white transition-all flex items-center justify-center gap-2 shadow-lg"
                   >
                     <span>Get {p.name}</span>
                     <ArrowRight className="h-4 w-4" />

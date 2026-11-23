@@ -79,7 +79,7 @@ export const VpsHosting: React.FC<VpsHostingProps> = ({ onNavigate }) => {
                 <div
                   key={p.id}
                   className={`rounded-3xl p-6 bg-zinc-900/80 border flex flex-col justify-between relative transition-all ${
-                    p.isPopular ? 'border-amber-500 shadow-xl shadow-amber-500/10 bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
+                    p.isPopular ? 'border-amber-500 shadow-xl bg-zinc-900' : 'border-zinc-800 hover:border-zinc-700'
                   }`}
                 >
                   {p.isPopular && (
@@ -133,7 +133,7 @@ export const VpsHosting: React.FC<VpsHostingProps> = ({ onNavigate }) => {
                     onClick={() => onNavigate('register', { planId: p.id, productCategory: 'vps' })}
                     className={`w-full mt-6 py-3 rounded-xl font-semibold text-xs transition-all flex items-center justify-center gap-2 ${
                       p.isPopular
-                        ? `bg-gradient-to-r ${accentClasses.gradient} text-white shadow-md hover:opacity-95`
+                        ? `bg-gradient-to-r ${accentClasses.gradient} text-zinc-950 shadow-md hover:opacity-95`
                         : 'bg-zinc-800 text-white hover:bg-zinc-700'
                     }`}
                   >

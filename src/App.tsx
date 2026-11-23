@@ -9,12 +9,12 @@ import { ShieldAlert, RefreshCw, LogOut } from 'lucide-react';
 import { parseUrlToRoute, routeToUrl } from './lib/routing';
 
 // Components
-import { Navbar } from './components/Navbar';
+import { SiteSidebar } from './components/SiteSidebar';
 import { PanelLayout } from './components/panel/PanelLayout';
 import { AdminShell } from './components/AdminShell';
 import { Footer } from './components/Footer';
-import { CustomCursor } from './components/CustomCursor';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { ScrollProgress } from './components/animation/ScrollFx';
 
 // Public Pages
 import { Home } from './pages/public/Home';
@@ -231,20 +231,18 @@ function AppContent() {
   if (maintenanceMode && user?.role !== 'admin' && user?.role !== 'super_admin') {
     if (isCustomerPage) {
       return (
-        <div className="min-h-dvh bg-[#09090b] text-zinc-100 flex flex-col items-center justify-center p-6 relative font-sans select-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-          <div className="max-w-md w-full bg-zinc-900/40 border border-zinc-800/80 p-8 rounded-3xl backdrop-blur-md text-center space-y-6 relative shadow-2xl">
-            <div className="h-16 w-16 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center animate-pulse">
-              <ShieldAlert className="h-8 w-8 text-amber-500" />
+        <div className="min-h-dvh bg-bg text-text-1 flex flex-col items-center justify-center p-6 relative font-sans select-none">
+          <div className="max-w-md w-full bg-bg-2 border border-border p-8 rounded-[14px] text-center space-y-6 relative">
+            <div className="h-14 w-14 mx-auto rounded-xl border border-border flex items-center justify-center">
+              <ShieldAlert className="h-7 w-7 text-text-1" />
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-xl font-bold tracking-tight text-white uppercase font-mono">System Maintenance</h1>
-              <p className="text-xs text-zinc-400 font-mono">Platform Upgrades In Progress</p>
+              <h1 className="text-xl font-bold tracking-tight text-text-1 uppercase font-mono">System maintenance</h1>
+              <p className="mp-eyebrow">Platform upgrades in progress</p>
             </div>
 
-            <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/80 p-4 rounded-2xl border border-zinc-800/50 max-h-[150px] overflow-y-auto scrollbar-thin">
+            <p className="text-sm text-text-2 leading-relaxed bg-bg-3 p-4 rounded-xl border border-border max-h-[150px] overflow-y-auto">
               {maintenanceMessage || 'We are currently performing scheduled system upgrades. We will return online shortly.'}
             </p>
 
@@ -256,25 +254,20 @@ function AppContent() {
                   setTimeout(() => setCheckingMaintenance(false), 800);
                 }}
                 disabled={checkingMaintenance}
-                className="w-full min-h-[44px] rounded-xl text-xs font-semibold text-zinc-900 bg-amber-400 hover:bg-amber-300 disabled:opacity-55 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-400/10"
+                className="btn-primary w-full justify-center min-h-[44px] disabled:opacity-55"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${checkingMaintenance ? 'animate-spin' : ''}`} />
                 <span>{checkingMaintenance ? 'Checking status...' : 'Check if completed'}</span>
               </button>
 
-              <button
-                onClick={() => logout()}
-                className="w-full min-h-[44px] rounded-xl text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-950/40 border border-zinc-800/50 hover:border-zinc-800 hover:bg-zinc-900/30 transition-all flex items-center justify-center gap-2"
-              >
+              <button onClick={() => logout()} className="btn-secondary w-full justify-center min-h-[44px]">
                 <LogOut className="h-3.5 w-3.5" />
-                <span>Sign Out of Account</span>
+                <span>Sign out of account</span>
               </button>
             </div>
           </div>
 
-          <div className="mt-8 text-[11px] text-zinc-600 font-mono uppercase tracking-widest">
-            {brandName || 'Platform'}
-          </div>
+          <div className="mt-8 mp-eyebrow">{brandName || 'Platform'}</div>
         </div>
       );
     }
@@ -366,19 +359,10 @@ function AppContent() {
             </PageTransition>
   );
   const adminShell = isAdminPage && !!user;
-
   return (
-    <div className="min-h-dvh max-w-full overflow-x-clip bg-transparent text-zinc-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
-      {/* Maintenance Mode Warning Banner for Public Pages */}
-      {maintenanceMode && isPublicPage && (
-        <div className="bg-amber-500 text-black py-2 px-4 text-center text-xs font-bold font-mono tracking-wide shadow-md shrink-0 flex items-center justify-center gap-2 z-50">
-          <ShieldAlert className="h-4 w-4 shrink-0" />
-          <span>PLATFORM UNDER MAINTENANCE: Billing and account write operations are temporarily frozen.</span>
-        </div>
-      )}
-
-      {/* Custom Cursor */}
-      <CustomCursor />
+    <div className="mp-app selection:bg-text-1 selection:text-bg">
+      <a href="#mp-content" className="skip-link">Skip to main content</a>
+      <ScrollProgress />
 
       {/* Global Search Command Palette */}
       <GlobalSearchModal
@@ -387,41 +371,38 @@ function AppContent() {
         onNavigate={handleNavigate}
       />
 
-      {adminShell ? (
-        <AdminShell currentPage={currentPage} onNavigate={handleNavigate} onOpenSearch={() => setIsSearchOpen(true)}>{pageContent}</AdminShell>
-      ) : (<>
-      {/* Top Header Navbar */}
-      <Navbar
-        currentPage={currentPage}
-        onNavigate={handleNavigate}
-        onOpenSearch={() => setIsSearchOpen(true)}
-      />
+      {/* Same sidebar / bottom bar / drawer as MonoPanel Home, on every page */}
+      <SiteSidebar currentPage={currentPage} onNavigate={handleNavigate} onOpenSearch={() => setIsSearchOpen(true)} />
 
-      {/* Main Body Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-
-        {/* Content Viewport */}
-        <main className="flex-1 min-w-0 overflow-x-clip min-h-[calc(100dvh-4rem)] flex flex-col justify-between p-4 lg:p-6">
-          <div className="flex-1 flex flex-col">
-            <CustomerShell enabled={isCustomerPage && !!user && !blocked} currentPage={currentPage} params={pageParams} onNavigate={handleNavigate}>
-            {pageContent}
-            </CustomerShell>
+      <main className="mp-main" id="mp-content">
+        {/* Maintenance Mode Warning Banner for Public Pages */}
+        {maintenanceMode && isPublicPage && (
+          <div className="mb-4 rounded-xl border border-border bg-text-1 text-bg py-2.5 px-4 text-center text-xs font-bold font-mono tracking-wide flex items-center justify-center gap-2">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            <span>PLATFORM UNDER MAINTENANCE: Billing and account write operations are temporarily frozen.</span>
           </div>
+        )}
 
-          {/* Subtle Panel Footer for Customer & Admin Pages */}
-          {!isPublicPage && (
-            <footer className="py-3 px-6 border-t border-zinc-900/80 bg-zinc-950/60 text-[11px] text-zinc-500 flex items-center justify-between font-mono shrink-0 mt-8">
-              <span className="font-medium text-zinc-400">© 2025–2026 {brandName || 'Platform'}</span>
-              <span className="text-[10px] text-zinc-600 hidden sm:inline">Account & Billing Portal</span>
-            </footer>
+        <div className="flex-1 flex flex-col">
+          {adminShell ? (
+            <AdminShell currentPage={currentPage} onNavigate={handleNavigate}>{pageContent}</AdminShell>
+          ) : (
+            <CustomerShell enabled={isCustomerPage && !!user && !blocked} currentPage={currentPage} params={pageParams} onNavigate={handleNavigate}>
+              {pageContent}
+            </CustomerShell>
           )}
-        </main>
-      </div>
+        </div>
 
-      {/* Footer for Public Views */}
-      {isPublicPage && <Footer onNavigate={handleNavigate} />}
-      </>)}
-
+        {/* Footer: Home-style hairline footer on app pages, the full footer on public pages */}
+        {isPublicPage ? (
+          <Footer onNavigate={handleNavigate} />
+        ) : (
+          <footer className="mp-footer">
+            <span>© 2025–2026 {brandName || 'Platform'}</span>
+            <span className="hidden sm:inline">{adminShell ? 'Admin control panel' : 'Account & billing portal'}</span>
+          </footer>
+        )}
+      </main>
     </div>
   );
 }

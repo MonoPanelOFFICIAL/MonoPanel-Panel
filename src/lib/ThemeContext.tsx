@@ -59,7 +59,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [activeFontId, setActiveFontIdState] = useState<string>(() => {
-    return localStorage.getItem('monopanel_active_font_id') || 'Quicksand';
+    return localStorage.getItem('monopanel_active_font_id') || 'Space Grotesk Variable';
   });
 
   const [accent, setAccentState] = useState<AccentColor>(() => {
@@ -77,7 +77,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [customCursorEnabled, setCustomCursorState] = useState<boolean>(() => {
     const val = localStorage.getItem('monopanel_custom_cursor');
-    return val !== null ? val === 'true' : true;
+    return val !== null ? val === 'true' : false;
   });
 
   const [animationsEnabled, setAnimationsState] = useState<boolean>(() => {
@@ -193,6 +193,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem('monopanel_active_font_id', activeFontId);
     document.body.style.fontFamily = activeFont.fontFamily;
+    // Space Grotesk is self-hosted; every other choice is fetched from Google Fonts only when an admin picks it.
+    if (activeFontId !== 'Space Grotesk Variable') {
+      const id = 'monopanel-font-' + activeFontId.replace(/\s+/g, '-').toLowerCase();
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id; link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(activeFontId).replace(/%20/g, '+')}:wght@400;500;600;700&display=swap`;
+        document.head.appendChild(link);
+      }
+    }
   }, [activeFontId, activeFont]);
 
   // Apply Favicon & Background Asset (Image / animated GIF, Blur control, Overlay opacity)
@@ -200,7 +210,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem('monopanel_theme_assets', JSON.stringify(themeAssets));
 
     const favUrl = themeAssets.faviconUrl?.trim();
-    const targetFavicon = favUrl || '/favicon.svg';
+    const targetFavicon = favUrl || '/assets/icon.png';
 
     // Query or create favicon link tags globally
     let faviconLinks = Array.from(
@@ -219,7 +229,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (favUrl) {
         link.removeAttribute('type');
       } else {
-        link.setAttribute('type', 'image/svg+xml');
+        link.setAttribute('type', 'image/png');
       }
     });
 
@@ -243,7 +253,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     styleTag.innerHTML = `
       body {
-        background-color: #09090b !important;
+        background-color: #000000 !important;
       }
       body::before {
         content: "";
@@ -271,7 +281,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         right: 0;
         bottom: 0;
         z-index: -10;
-        background-color: ${bgUrl ? `rgba(9, 9, 11, ${opacityVal})` : 'transparent'} !important;
+        background-color: ${bgUrl ? `rgba(0, 0, 0, ${opacityVal})` : 'transparent'} !important;
         pointer-events: none;
         transition: background-color 0.3s ease;
       }
@@ -360,7 +370,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border: 'border-emerald-500/30',
           ring: 'focus:ring-emerald-500/50',
           gradient: 'from-emerald-500 to-teal-600',
-          shadow: 'shadow-emerald-500/20'
+          shadow: ''
         };
       case 'midnight':
         return {
@@ -369,7 +379,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border: 'border-cyan-500/30',
           ring: 'focus:ring-cyan-500/50',
           gradient: 'from-blue-500 to-blue-700',
-          shadow: 'shadow-cyan-500/20'
+          shadow: ''
         };
       case 'cyberpunk':
         return {
@@ -378,7 +388,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border: 'border-fuchsia-500/30',
           ring: 'focus:ring-fuchsia-500/50',
           gradient: 'from-fuchsia-500 via-purple-600 to-pink-500',
-          shadow: 'shadow-fuchsia-500/20'
+          shadow: ''
         };
       case 'crimson':
         return {
@@ -387,7 +397,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border: 'border-red-500/30',
           ring: 'focus:ring-red-500/50',
           gradient: 'from-rose-500 via-red-600 to-red-700',
-          shadow: 'shadow-red-500/20'
+          shadow: ''
         };
       case 'sapphire':
         return {
@@ -396,7 +406,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           border: 'border-blue-500/30',
           ring: 'focus:ring-blue-500/50',
           gradient: 'from-blue-500 to-indigo-600',
-          shadow: 'shadow-blue-500/20'
+          shadow: ''
         };
       case 'golden':
       default:
@@ -405,9 +415,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           bg: 'bg-amber-500',
           border: 'border-amber-500/30',
           ring: 'focus:ring-amber-500/50',
-          // Solid black-to-black pill (not the light end of the ramp) so the
-          // text-white labels used alongside this everywhere stay legible.
-          gradient: 'from-zinc-950 via-black to-zinc-900',
+          // Home's solid primary button: light ink (pair it with dark text).
+          gradient: 'from-zinc-200 via-zinc-200 to-zinc-300',
           shadow: 'shadow-black/40'
         };
     }

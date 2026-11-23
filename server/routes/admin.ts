@@ -1450,7 +1450,7 @@ router.post('/anti-abuse/test', async (req: AuthenticatedRequest, res: Response)
 router.get('/theme-settings', async (req: AuthenticatedRequest, res: Response) => {
   const db = await getDb();
   const defaults = {
-    activeThemeId: 'golden', activeFontId: 'Quicksand', cardStyle: 'rounded-2xl',
+    activeThemeId: 'golden', activeFontId: 'Space Grotesk Variable', cardStyle: 'rounded-2xl',
     glowIntensity: 'vibrant', allowUserCustomization: true, backgroundBlur: 'none', backgroundOverlayOpacity: 75,
     assets: { logoUrl: '', faviconUrl: '', bgPatternUrl: '', bannerUrl: '', loginBgUrl: '' }
   };

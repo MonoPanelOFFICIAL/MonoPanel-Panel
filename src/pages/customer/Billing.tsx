@@ -114,7 +114,7 @@ export const Billing: React.FC<BillingProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8">
+    <div className="space-y-8">
       
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
@@ -125,7 +125,7 @@ export const Billing: React.FC<BillingProps> = ({ onNavigate }) => {
 
         <button
           onClick={() => setShowAddCreditsModal(true)}
-          className={`px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-gradient-to-r ${accentClasses.gradient} shadow-md flex items-center gap-2 hover:opacity-95 transition-all`}
+          className={`px-5 py-2.5 rounded-xl font-semibold text-xs text-zinc-950 bg-gradient-to-r ${accentClasses.gradient} shadow-md flex items-center gap-2 hover:opacity-95 transition-all`}
         >
           <PlusCircle className="h-4 w-4" /> Add Account Credits
         </button>
