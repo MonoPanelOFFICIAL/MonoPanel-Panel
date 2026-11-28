@@ -345,13 +345,45 @@ The panel talks to every daemon over HMAC-signed HTTP. There is **no installer y
 > [!IMPORTANT]
 > Requires **Node.js 18+** and **npm**.
 
-Check out monopanel.netlify.app
-
 <details open>
 <summary><b>1 · Clone & install</b></summary>
 
+```bash
+git clone <your-panel-repo-url> monopanel-panel
+cd monopanel-panel
+npm install
+```
 
-```curl -fsSL https://monopanel.netlify.app/installer.sh | bash
+</details>
+
+<details open>
+<summary><b>2 · Configure</b></summary>
+
+```bash
+cp .env.example .env
+```
+
+Create the PostgreSQL database (12+) and point the panel at it. MonoPanel has no embedded database, like Pterodactyl and Jexactyl:
+
+```sql
+CREATE USER monopanel WITH PASSWORD 'change-me';
+CREATE DATABASE monopanel OWNER monopanel;
+```
+
+```env
+DATABASE_URL="postgres://monopanel:change-me@127.0.0.1:5432/monopanel"
+```
+
+Set at least `JWT_SECRET` **before the first start**:
+
+```env
+JWT_SECRET="a-long-random-string"
+```
+
+Generate a strong secret:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
 **Default admin account** (created on first start only):
